@@ -1,0 +1,28 @@
+{
+    "name": "List Borg",
+    "description": "select something and I'll generate a list of similar things for you",
+    "version": "0.1",
+    "manifest_version": 3,
+    "icons": {
+      "48": "assets/48.png",
+      "72": "assets/72.png",
+      "96": "assets/96.png",
+      "144": "assets/144.png"
+    },
+    "action": {
+      "default_popup": "index.html",
+      "default_title": "List Borg"
+    },
+    "background": {
+      "service_worker": "scripts/contextMenuServiceWorker.js"
+    },
+    "permissions": ["contextMenus", "tabs", "storage"],
+    "host_permissions": ["https://*/*"],
+    "content_scripts": [
+      {
+        "matches": ["http://*/*", "https://*/*"],
+        "js": ["scripts/content.js"]
+      }
+    ]
+  }
+  
