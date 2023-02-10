@@ -1,22 +1,12 @@
 
 let modal = null;
 let modalContent = null;
-let modalContainer = document.createElement("div");
-modalContainer.classList.add("modal-container");
-document.body.appendChild(modalContainer);
-//clicking outside of the modal closes it:
-const createModalCloseListener = () => {
-    modalCloseListener = (event) => {
-        if (event.target.classList.contains('modalClose') ||
-            (modal && modal.contains && !modal.contains(event.target))) {
-            modal.parentNode.removeChild(modal);
-            modal = null;
-            chrome.runtime.sendMessage({ message: 'cancel_generate' });
+let modalRect = null;
+let storedPositionModal;
+let modalIsLeft = false;
 
-        }
-    };
-    document.addEventListener("click", modalCloseListener);
-}
+
+
 // define colors:
 const red = '#AA0000';
 const gold = '#DEB60D';
@@ -46,70 +36,104 @@ function hideListLoader() {
         listLoader.style.display = 'none' : null;
 }
 
-// create a function to parse lines into li's from baseCompletion message:
-
-//for stream attempt I commented parseList out Feb 4 2023:
-// const parseList = (content) => {
-//     const lines = content.split('\n');
-//     const firstLine = lines.shift();
-//     const lineListItems = (lines) => {
-//         let list = '';
-//         lines.forEach(line => {
-//             list += `<li>${line}</li>`;
-//         });
-//         return list;
-//     };
-//     return { firstLine, lineListItems: lineListItems(lines) };
-// };
-
-
-// Add styles to the modal-container using cssText
-modalContainer.style.cssText = `
-   position: relative;
-`;
-
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = () => {
+    if (modal) {
+        modal.parentNode.removeChild(modal);
+      }
     //create modal div:
     modal = document.createElement("div");
     modal.classList.add("listModal");
 
-    //Text selection and setting up positioning of modal:
+    //Text selection and setting up positioning of modal and arrow:
     let selection = window.getSelection();
     let range = selection.getRangeAt(0);
     let rect = range.getBoundingClientRect();
     let vw = Math.round(rect.left / window.innerWidth * 100);
     let vh = Math.round(rect.top / window.innerHeight * 100);
 
-    modal.innerHTML = `<div class="modal-content">
-    <span class="modalClose">&times;</span>
+
+    modal.innerHTML = `
+    <div class="modalClose">&times;</div>
     <div class="list-loading"></div>
+    <div class="modal-content">
     </div>`;
 
     // Append the modal to the page
-    modalContainer.appendChild(modal);
+    document.body.appendChild(modal);
     showListLoader();
 
-    //troubleshooting "left" positioning of modal:
-    const modalRect = modal.getBoundingClientRect();
-
     modal.style.cssText = `
-        display: block;
+        display: none;
         position: fixed;
-        top: ${vh}vh;
-        left: ${vw}vw;
+        top: 50%;
+        left: 50%;
         margin: 0;
         width: 300px; /* adjust as needed */
         background-color: white;
         border: 1px solid #ccc;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-        padding: 5px;
-        padding-top: 20px;
-        padding-left: 20px;
+        padding: 20px;
         z-index: 2147483645;
         border-radius: 10px;
         color: blue;
+        transition: all 0.2s ease-out;
         `;
+
+
+    const positionModal = () => {
+        // Get the height of the modal
+        let modalHeight = modal.offsetHeight;
+
+        // Calculate the top and left position of the modal
+        let top = rect.top + (rect.height / 2) - (modalHeight / 2);
+        let left = (rect.left + rect.width) + 15;
+
+        // Check if the top of the modal is outside the viewport
+        if (top < 0) {
+            top = 20;
+        }
+        // Check if the bottom of the modal is outside the viewport
+        if (top + modalHeight > window.innerHeight) {
+            top = window.innerHeight - modalHeight;
+        }
+
+        // Check if the right of the modal is outside the viewport, if so move it to the left of the selection
+        modalIsLeft = false;
+        if (left + modal.offsetWidth > window.innerWidth) {
+            left = (rect.left - modal.offsetWidth) - 15;
+            modalIsLeft = true;
+        }
+
+        // Update the top and left position of the modal
+        modal.style.top = `${top}px`;
+        modal.style.left = `${left}px`;
+        console.log("POSITION MODAL RAN with modal.style.top: " + modal.style.top + " and modalHeight: " + modalHeight);
+        modal.style.display = `block`;
+
+        // Check if the arrow already exists
+        let arrow = document.querySelector(".modalArrow");
+        if (!arrow) {
+            // Create the arrow
+            arrow = document.createElement("div");
+            arrow.className = "modalArrow";
+            arrow.style.position = "fixed";
+            arrow.style.display = "none";
+            arrow.style.width = "20px";
+            arrow.style.height = "20px";
+            arrow.style.transform = "rotate(45deg)";
+            arrow.style.backgroundColor = "white";
+            modal.appendChild(arrow);
+        }
+        // Update the position of the arrow
+        if (modalIsLeft) {
+            arrow.style.left = `${rect.left - arrow.offsetWidth - 10}px`;
+        } else {
+            arrow.style.left = `${rect.left + rect.width + 10}px`;
+        }
+        arrow.style.top = `${rect.top + (rect.height / 2) - 10}px`;
+
+    };
+    storedPositionModal = positionModal;
 
     // Add styles to the modal-content using cssText
     modalContent = modal.querySelector('.modal-content');
@@ -138,23 +162,40 @@ const createModal = () => {
    cursor: 'pointer';
 `;
 
-    createModalCloseListener();
+    modalCloseListener = (event) => {
+        if (event.target.classList.contains('modalClose') ||
+            (modal && modal.contains && !modal.contains(event.target))) {
+            console.log("modalCloseListener called");
+            modal.parentNode.removeChild(modal);
+            modal = null;
+            chrome.runtime.sendMessage({ message: 'cancel_generate' });
+
+        }
+    };
+    document.addEventListener("click", modalCloseListener);
+
+    ///////////positioning of modal:
+    modalRect = modal.getBoundingClientRect();
+
 };
 
 ///////////////////////////////////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
-// sometimes OpenAI sends multiple events in one message, so we need to handle this somehow
 
 const updateModalStream = (streamData) => {
+    console.log("updateModalStream called with streamData: " + streamData);
+
     // this streamData sometimes has multiple events (chunks) in one message, so we need to handle this properly
     const chunks = streamData.split('data: ');
 
     chunks.forEach(chunk => {
+        //sometimes they're empty  
         if (!chunk.trim()) {
             return;
         }
-        console.log("the CHUNK is the following: " + chunk);
+        //console.log("the CHUNK is the following: " + chunk);
+        //the last one is just [DONE]
         if (chunk.trim() == "[DONE]") {
-            console.log("data: [DONE] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            //console.log("data: [DONE] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             updateDone();
             return;
         }
@@ -168,10 +209,11 @@ const updateModalStream = (streamData) => {
         }
         try {
             let data = JSON.parse(jsonString);
-            console.log("the DATA is the following: " + data);
+            //console.log("the DATA is the following: " + data);
 
             // Extract the "text" value
             let lineText = data.choices[0].text;
+
             // Replace "/n" with "<br>" in the text
             if (lineText.indexOf('\n') !== -1) {
                 lineText = lineText.replace(/\n/g, '<br>');
@@ -182,8 +224,11 @@ const updateModalStream = (streamData) => {
                 console.error("The modal element was not found.");
                 return;
             }
+            // update the innerHTML with the AI response
             modalContent.innerHTML = modalContent.innerHTML + lineText;
-            console.log("updateModalStream lineText: " + lineText);
+
+            //modal positioning
+            storedPositionModal();
         } catch (error) {
             console.error("My Error parsing JSON: " + error);
         }
@@ -193,7 +238,6 @@ const updateModalStream = (streamData) => {
 const updateDone = () => {
     hideListLoader();
 };
-
 
 /////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////
 const updateModal = (content) => {
@@ -237,8 +281,8 @@ const updateModal = (content) => {
       background-color: white;
       border: 1px solid #ccc;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-      padding: 5px;
-      padding-left: 10px;
+      padding: 10px;
+
       z-index: 2147483645;
       border-radius: 10px;
       `;
@@ -364,14 +408,11 @@ const insert = (content) => {
     modal.style.display = 'none';
     createModalCloseListener();
     return true;
-
 };
 
 
-// added Jan 12 2023:
-chrome.runtime.onMessage.addListener(
-    // This is the message listener
 
+chrome.runtime.onMessage.addListener(
     (request, sender, sendResponse) => {
         console.log("I just received ANY message but haven't received content yet");
         if (request.message === 'modal') console.log("I just received a MODAL message but haven't received content yet");
@@ -413,3 +454,20 @@ chrome.runtime.onMessage.addListener(
         return true;
     },
 );
+
+
+// create a function to parse lines into li's from baseCompletion message:
+
+//for stream attempt I commented parseList out Feb 4 2023:
+// const parseList = (content) => {
+//     const lines = content.split('\n');
+//     const firstLine = lines.shift();
+//     const lineListItems = (lines) => {
+//         let list = '';
+//         lines.forEach(line => {
+//             list += `<li>${line}</li>`;
+//         });
+//         return list;
+//     };
+//     return { firstLine, lineListItems: lineListItems(lines) };
+// };

@@ -16,6 +16,7 @@ const getKey = () => {
 
 
 const sendMessage = (content, messageType = 'modal') => {
+    console.log("sendMessage before tabs.query");
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length === 0) {
             console.log("#1: Error: No active tabs found.");
@@ -28,6 +29,7 @@ const sendMessage = (content, messageType = 'modal') => {
             activeTab,
             { message: messageType, content },
             (response) => {
+                console.log('message sent! type: ' + messageType);
                 if (!response) {
                     console.log('No response from content script.');
                     return;
@@ -36,7 +38,9 @@ const sendMessage = (content, messageType = 'modal') => {
                     console.log('Error sending message: ', response.error);
                 } else {
                     if (response.status === 'failed') {
-                        console.log('injection failed.');
+                        console.log('message failed.');
+                    } else {
+                        console.log('message sent without status notfailed; type: ' + messageType);
                     }
                 }
             });
@@ -88,9 +92,10 @@ const generate = async (prompt) => {
             console.log("generate function completionResponse.body iwth getReader: " + line);
             // Check if there is a message from the main thread to cancel the request
             if (cancelled) {
+                console.log('444444444444 cancelled');
                 return;
             }
-
+            console.log("33 out to call sendMessage using line: " + line + " and messageType: stream");
             sendMessage(line, 'stream');
         }
     } catch (error) {
@@ -183,6 +188,7 @@ const generateCompletionAction = async (info) => {
                 `
             };
         } else {
+            //the AI api call:
             baseCompletion = await generate(`${basePromptPrefix}`);
         }
 
@@ -250,13 +256,12 @@ chrome.runtime.onInstalled.addListener(() => {
         title: 'ListBorg: %s',
         contexts: ['selection'],
     });
-
-
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === 'context-main') {
         //initModal is just to create a modal window to show the user a list is loading
+        cancelled = false;
         sendMessage(null, 'initModal');
         generateCompletionAction(info);
         console.log("Context menu click listener sees this selection text: " + info.selectionText);
