@@ -5,14 +5,6 @@ let modalRect = null;
 let storedPositionModal;
 let modalIsLeft = false;
 
-
-
-// define colors:
-const red = '#AA0000';
-const gold = '#DEB60D';
-
-
-
 //cursor for when list is loading:
 let cursorLoading;
 
@@ -26,7 +18,7 @@ function showCursor() {
     cursor.style.height = '20px';
     cursor.style.backgroundColor = '#ccc';
     let counter = 0;
-    const cursorLoading = setInterval(() => {
+    cursorLoading = setInterval(() => {
         cursor.style.opacity = counter % 2 === 0 ? '.5' : '1';
         counter++;
     }, 200);
@@ -57,7 +49,7 @@ const createModal = () => {
 
 
     modal.innerHTML = `
-    <div class="modalClose">&times;</div>
+    <div class="modalClose"></div>
     <div class="modal-content"></div><span class="list-cursor"></span>`;
 
     // Append the modal to the page
@@ -65,20 +57,22 @@ const createModal = () => {
     showCursor();
 
     modal.style.cssText = `
-        display: none;
-        position: fixed;
-        top: 100%;
-        left: 100%;
-        margin: 0;
-        width: 300px; /* adjust as needed */
-        background-color: white;
-        border: 1px solid #ccc;
-        padding: 20px;
-        z-index: 2147483645;
-        border-radius: 10px;
-        color: blue;
-        transition: all 0.2s ease-out;
-        `;
+    display: none;
+    position: fixed;
+    top: 100%;
+    left: 100%;
+    margin: 0;
+    width: 300px; /* adjust as needed */
+    background-color: #333;
+    border: 1px solid;
+    border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
+    border-image-slice: 1;
+    padding: 20px;
+    z-index: 2147483645;
+    border-radius: 10px;
+    color: #fff;
+    transition: all 0.2s ease-out;
+    `;
 
 
     const positionModal = () => {
@@ -146,22 +140,39 @@ const createModal = () => {
     // closeBtn
     const closeBtn = document.querySelector('.modalClose');
 
+    //     closeBtn.style.cssText = `
+    //    position: absolute;
+    //    top: -10px;
+    //    right: -12px;
+    //    width: 30px;
+    //    height: 30px;
+    //    text-align: center;
+    //    line-height: 40px;
+    //    font-size: 30px;
+    //    color: #fff;
+    //    background-color: #3f87a6;
+    //    border-radius: 50%;
+    //    cursor: pointer;
+    //    z-index: 2147483646;
+    // `;
+    closeBtn.innerHTML = "&times;";
     closeBtn.style.cssText = `
-   position: absolute;
-   top: -10px;
-   right: -12px;
-   width: 30px;
-   height: 30px;
-   text-align: center;
-   line-height: 30px;
-   font-size: 25px;
-   color: #fff;
-   background-color: red;
-   border-radius: 50%;
-   cursor: pointer;
-   z-index: 2147483646;
-   cursor: 'pointer';
+  position: absolute;
+  top: -10px;
+  right: -12px;
+  width: 30px;
+  height: 30px;
+  text-align: center;
+  background: linear-gradient(to bottom right, #DA7E00, #F46D00);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  z-index: 2147483646;
 `;
+
 
     modalCloseListener = (event) => {
         if (event.target.classList.contains('modalClose') ||
