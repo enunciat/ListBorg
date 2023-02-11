@@ -11,36 +11,39 @@ let modalIsLeft = false;
 const red = '#AA0000';
 const gold = '#DEB60D';
 
-//loading animation:
-function showListLoader() {
-    const listLoader = document.querySelector('.list-loading');
-    listLoader ?
-        listLoader.style.cssText = `
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    border: 4px solid #f3f3f3; /* Light grey */
-    border-top: 4px solid #3498db; /* Blue */
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    animation: spin 0.8s linear infinite;
-    ` : null;
+
+
+//cursor for when list is loading:
+let cursorLoading;
+
+function showCursor() {
+
+    const cursor = document.querySelector('.list-cursor');
+    if (!cursor) return;
+
+    cursor.style.display = 'inline-block';
+    cursor.style.width = '5px';
+    cursor.style.height = '20px';
+    cursor.style.backgroundColor = '#ccc';
+    let counter = 0;
+    const cursorLoading = setInterval(() => {
+        cursor.style.opacity = counter % 2 === 0 ? '.5' : '1';
+        counter++;
+    }, 200);
 }
 
-function hideListLoader() {
-    const listLoader = document.querySelector('.list-loading');
-    listLoader ?
-        listLoader.style.display = 'none' : null;
+function hideCursor() {
+    clearInterval(cursorLoading);
+    const cursor = document.querySelector('.list-cursor');
+    cursor ?
+        cursor.style.display = 'none' : null;
 }
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = () => {
     if (modal) {
         modal.parentNode.removeChild(modal);
-      }
+    }
     //create modal div:
     modal = document.createElement("div");
     modal.classList.add("listModal");
@@ -55,19 +58,17 @@ const createModal = () => {
 
     modal.innerHTML = `
     <div class="modalClose">&times;</div>
-    <div class="list-loading"></div>
-    <div class="modal-content">
-    </div>`;
+    <div class="modal-content"></div><span class="list-cursor"></span>`;
 
     // Append the modal to the page
     document.body.appendChild(modal);
-    showListLoader();
+    showCursor();
 
     modal.style.cssText = `
         display: none;
         position: fixed;
-        top: 50%;
-        left: 50%;
+        top: 100%;
+        left: 100%;
         margin: 0;
         width: 300px; /* adjust as needed */
         background-color: white;
@@ -165,11 +166,11 @@ const createModal = () => {
     modalCloseListener = (event) => {
         if (event.target.classList.contains('modalClose') ||
             (modal && modal.contains && !modal.contains(event.target))) {
-            console.log("modalCloseListener called");
-            modal.parentNode.removeChild(modal);
-            modal = null;
-            chrome.runtime.sendMessage({ message: 'cancel_generate' });
-
+            if (modal) {
+                modal.parentNode.removeChild(modal);
+                modal = null;
+                chrome.runtime.sendMessage({ message: 'cancel_generate' });
+            }
         }
     };
     document.addEventListener("click", modalCloseListener);
@@ -236,13 +237,13 @@ const updateModalStream = (streamData) => {
 };
 
 const updateDone = () => {
-    hideListLoader();
+    hideCursor();
 };
 
 /////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////
 const updateModal = (content) => {
     if (!modal) return;
-    hideListLoader();
+    hideCursor();
     const { firstLine, lineListItems } = parseList(content);
     modal.innerHTML = `<div class="modal-content">
     <span class="modalClose">&times;</span>
@@ -440,11 +441,11 @@ chrome.runtime.onMessage.addListener(
                 createModal();
                 sendResponse({ status: 'success' });
                 break;
-            case 'modal':
-                console.log("MODAL message case being handled");
-                updateModal(content);
-                sendResponse({ status: 'success' });
-                break;
+            // case 'modal':
+            //     console.log("MODAL message case being handled");
+            //     updateModal(content);
+            //     sendResponse({ status: 'success' });
+            //     break;
             case 'stream':
                 console.log('STREAM message case being handled');
                 updateModalStream(content);
