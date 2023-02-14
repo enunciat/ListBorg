@@ -42,6 +42,17 @@ checkForKey().then((response) => {
   }
 });
 
+//toggle display type between modal and sidebar (NOT SET UP YET):
+const displayToggle = document.getElementById("displayToggle");
+const displayType = document.getElementById("displayType");
+
+displayToggle.addEventListener("change", function () {
+  if (displayToggle.checked) {
+    displayType.innerHTML = "Sidebar";
+  } else {
+    displayType.innerHTML = "Modal";
+  }
+});
 
 
 

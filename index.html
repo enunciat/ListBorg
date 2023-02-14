@@ -3,11 +3,8 @@
         <link rel="stylesheet" href="index.css">
     </head>
     <body>
-        <h1>List: </h1>
-        <button class="newlist">New List</button>
-        <ul class="currentlist">
-            
-        </ul>
+        <h1>List Borg</h1>
+        <h2>Create a list from any selected text</h2>
         <div id="key_needed">
             <p>To get started, add your OpenAI API Key!</p>
             <input id="key_input" />
@@ -17,6 +14,13 @@
            <p>You entered your OpenAI API Key.</p>
            <button id="change_key_button">Change key</button>
         </div>
+
+          <label class="switch">
+            <input type="checkbox" id="displayToggle">
+            <span class="slider round"></span>
+          </label>
+          <!-- <p>Display: <span id="displayType">Modal</span></p> -->
+          
     </body>
     <script src="index.js"></script>
 </html>

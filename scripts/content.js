@@ -5,6 +5,11 @@ let modalRect = null;
 let storedPositionModal;
 let modalIsLeft = false;
 
+let updateTextBuffer = '';
+let processorTextBuffer = '';
+
+let asSidebar = false;
+
 //cursor for when list is loading:
 let cursorLoading;
 
@@ -36,6 +41,10 @@ const createModal = () => {
     if (modal) {
         modal.parentNode.removeChild(modal);
     }
+    //clear console text buffers:
+    updateTextBuffer = '';
+    processorTextBuffer = '';
+
     //create modal div:
     modal = document.createElement("div");
     modal.classList.add("listModal");
@@ -129,6 +138,7 @@ const createModal = () => {
 
     };
     storedPositionModal = positionModal;
+    storedPositionModal(); 
 
     // Add styles to the modal-content using cssText
     modalContent = modal.querySelector('.modal-content');
@@ -188,13 +198,15 @@ const createModal = () => {
 
     ///////////positioning of modal:
     modalRect = modal.getBoundingClientRect();
+      
+      
 
 };
 
 ///////////////////////////////////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
-
 const updateModalStream = (streamData) => {
     console.log("updateModalStream called with streamData: " + streamData);
+    updateTextBuffer += streamData;
 
     // this streamData sometimes has multiple events (chunks) in one message, so we need to handle this properly
     const chunks = streamData.split('data: ');
@@ -204,7 +216,6 @@ const updateModalStream = (streamData) => {
         if (!chunk.trim()) {
             return;
         }
-        //console.log("the CHUNK is the following: " + chunk);
         //the last one is just [DONE]
         if (chunk.trim() == "[DONE]") {
             //console.log("data: [DONE] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
@@ -227,28 +238,138 @@ const updateModalStream = (streamData) => {
             let lineText = data.choices[0].text;
 
             // Replace "/n" with "<br>" in the text
-            if (lineText.indexOf('\n') !== -1) {
-                lineText = lineText.replace(/\n/g, '<br>');
-            }
+            // if (lineText.indexOf('\n') !== -1) {
+            //     lineText = lineText.replace(/\n/g, '<br>');
+            // }
+            
 
-            // your code to update the modal with the data
-            if (!modal) {
-                console.error("The modal element was not found.");
-                return;
-            }
-            // update the innerHTML with the AI response
-            modalContent.innerHTML = modalContent.innerHTML + lineText;
+            // // your code to update the modal with the data
+            // if (!modal) {
+            //     console.error("The modal element was not found.");
+            //     return;
+            // }
+
+
+            // // update the innerHTML with the AI response
+            // modalContent.innerHTML = modalContent.innerHTML + lineText;
+
+            // Call the updateModalProcessor function and pass the text to it
+            updateModalProcessor(lineText);
+            processorTextBuffer += lineText;
 
             //modal positioning
-            storedPositionModal();
+            // storedPositionModal();
         } catch (error) {
             console.error("My Error parsing JSON: " + error);
         }
     });
 };
 
+//this works:
+let modalBuffer = "";
+const updateModalProcessor = (text) => {
+    if (!modal) {
+        console.error("The modal element was not found.");
+        return;
+    }
+
+    modalBuffer += text;
+    let lines = modalBuffer.split("\n");
+    if (lines.length > 1) {
+        modalBuffer = lines.pop();
+        let completeLines = lines.join("\n");
+        modalContent.innerHTML = modalContent.innerHTML + completeLines;
+    }
+
+    //modal positioning
+    storedPositionModal();
+};
+
+//this works to display the stream data in the modal but it cuts off the <div part of each line:
+// const updateModalProcessor = (text) => {
+//     // your code to process the text and update the modal with the data
+//     if (!modal) {
+//         console.error("The modal element was not found.");
+//         return;
+//     }
+
+//     // update the innerHTML with the AI response
+//     modalContent.innerHTML = modalContent.innerHTML + text;
+
+//     //reminder of modal.innerHTML:
+//     // modal.innerHTML = `
+//     // <div class="modalClose"></div>
+//     // <div class="modal-content"></div><span class="list-cursor"></span>`;
+
+//     //modal positioning
+//     storedPositionModal();
+// };
+
+
+
+// the following doesn't work to parse stream events into JSON:
+/////22222222222222222222/////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
+// const updateModalStream = (streamData) => {
+//     console.log("updateModalStream called with streamData: " + streamData);
+
+//     let jsonString = '';
+//     let startIndex = 0;
+//     let endIndex = 0;
+
+//     const chunks = streamData.split('data: ');
+
+//     chunks.forEach(chunk => {
+//         if (!chunk.trim()) {
+//             return;
+//         }
+
+//         for (let i = 0; i < chunk.length; i++) {
+//             if (chunk[i] === '{') {
+//                 startIndex = i;
+//             } else if (chunk[i] === '}') {
+//                 endIndex = i + 1;
+//                 jsonString = chunk.substring(startIndex, endIndex);
+
+//                 try {
+//                     let data = JSON.parse(jsonString);
+//                     //console.log("the DATA is the following: " + data);
+
+//                     let items = data.items;
+//                     let itemList = '';
+
+//                     // Create a list of items
+//                     items.forEach(item => {
+//                         itemList += '<li>' + item.item + ': ' + item.details + '</li>';
+//                     });
+
+//                     // your code to update the modal with the data
+//                     if (!modal) {
+//                         console.error("The modal element was not found.");
+//                         return;
+//                     }
+
+//                     // update the innerHTML with the AI response
+//                     modalContent.innerHTML = modalContent.innerHTML + '<ul>' + itemList + '</ul>';
+
+//                     //modal positioning
+//                     storedPositionModal();
+//                 } catch (error) {
+//                     console.error("My Error parsing JSON: " + error);
+//                 }
+
+//                 // Reset the variables for the next JSON string
+//                 jsonString = '';
+//                 startIndex = 0;
+//                 endIndex = 0;
+//             }
+//         }
+//     });
+// };
+
 const updateDone = () => {
     hideCursor();
+    console.log("//////// Update Text is //////" + updateTextBuffer);
+    console.log("//////// Processor Text is //////" + processorTextBuffer);
 };
 
 /////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////

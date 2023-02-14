@@ -1,0 +1,21 @@
+
+h2 {
+    color: lightgrey;
+    font-size: medium;
+    /* center text */
+    text-align: center;
+}
+
+#items li {
+  /* useless because browser just closes <ul id="items"></ul> right away */
+  }
+
+
+  li[class*="item"] {
+    display: block;
+    text-decoration: none;
+    color: lightgrey;
+  }
+  li[class*="metadata"] {
+/* useless */
+  }

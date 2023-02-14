@@ -48,7 +48,6 @@ const sendMessage = (content, messageType = 'modal') => {
 
 };
 
-
 // generate using openai api:
 const generate = async (prompt) => {
     console.log("OPEN AI API WAS CALLED")
@@ -114,7 +113,7 @@ chrome.runtime.onMessage.addListener(
             // code to cancel the OpenAI request
             cancelled = true;
         }
-  
+
     }
 );
 
@@ -131,39 +130,71 @@ const generateCompletionAction = async (info) => {
         let { selectionText } = info;
         console.log("#2: my selectionText is: " + selectionText);
         const basePromptPrefix =
-            `From the item shown below, pick a Wikipedia list of items that includes that item, and show other items in the same list. Make the list about 8-20 items long, say the Wikipedia list that it's found in (if applicable), and include extra information that is relevant in parentheses if helpful. For example:
-        item: The Red Balloon
-        list: Wikipedia list of Academy Award for Best Original Screenplay 
-        1. Sunset Boulevard (1950)
-        2. On the Waterfront (1954)
-        3. Designing Woman (1957)
-        4. The Defiant Ones (1958)
-        5. Butch Cassidy and the Sundance Kid (1969)
-        6. Patton (1970)
-        7. Network (1976)
-        8. Witness (1985)
-        9. Rain Man (1988)
-        10. Pulp Fiction (1994)
-        11. Almost Famous (2000)
-        12. Milk (2008)
-        13. Midnight in Paris (2011)
-        
-        item: Stirling heat engine
-        list: Wikipedia list of Scottish inventions and discoveries: 
-        1. Iron-Hulled Steamship (invented by Henry Bell, 1812) 
-        2. Wire Rope (invented by Robert Stirling Newall, 1834)
-        3. Scotch Plough (invented by James Small, 1790)
-        4. Kinetoscope (invented by William Kennedy-Laurie Dickson, 1891)
-        5. Teleprinter (invented by Donald Murray, 1923)
-        6. Theory of Electromagnetism (developed by James Clerk Maxwell, 1861)
-        7. First Cloned Mammal (Dolly the Sheep, cloned by Ian Wilmut, 1996)
-        8. General Anaesthetic (first used by James Young Simpson, 1847)
-        9. Television (invented by John Logie Baird, 1926)
-        10. Vacuum Flask (invented by James Dewar, 1892)
-        11. Lucifer Friction Match (invented by Charles Macintosh, 1827)
-        
-        item: ${selectionText}
-        list:`;
+`Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
+
+Generate a list that would accurately contain this item: <li>the godfather</li><li id="details">true</li>
+<div id="list">
+<h2 id="list-title">AFI's 100 Years...100 Movies</h2>
+<ul id="items">
+<li class="item1">Citizen Kane</li>
+<li class="item2">Casablanca</li>
+<li class="item3">The Godfather</li>
+<li class="item4">Gone with the Wind</li>
+<li class="item5">Lawrence of Arabia</li>
+<li class="item6">The Wizard of Oz</li>
+<li class="item7">The Graduate</li>
+<li class="item8">On the Waterfront</li>
+<li class="item9">Schindler's List</li>
+<li class="item10">Singin' in the Rain</li>
+</ul>
+<ul id="metadata">
+<li id="quantity">10</li>
+<li id="order">quality</li>
+<li id="category">film</li>
+<li id="list-type">evaluative</li>
+<li id="notes">This is the first 10 of the AFI's 100 years...100 movies list.</li>
+<li id="sources">https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies</li>
+<li id="details">true</li>
+</ul>
+<ul id="details">
+<li class="item1">1941, directed by Orson Welles, produced by RKO Radio Pictures</li>
+<li class="item2">1942, directed by Michael Curtiz, produced by Warner Bros. Pictures</li>
+<li class="item3">1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions</li>
+<li class="item4">1939, directed by Victor Fleming, produced by Selznick International Pictures</li>
+<li class="item5">1962, directed by David Lean, produced by Horizon Pictures</li>
+<li class="item6">1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer</li>
+<li class="item7">1967, directed by Mike Nichols, produced by Lawrence Turman</li>
+<li class="item8">1954, directed by Elia Kazan, produced by Horizon-American Pictures</li>
+<li class="item9">1993, directed by Steven Spielberg, produced by Amblin Entertainment</li>
+<li class="item10">1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer</li>
+</ul>
+</div>        
+
+Generate a list that would accurately contain this item: <li>Azerbaijan</li><li id="order">alphabetical</li>
+<div id="list">
+<h2 id="list-title">Wikipedia List of Landlocked Countries</h2>
+<ul id="items">
+<li class="item1">Afghanistan</li>
+<li class="item2">Andorra</li>
+<li class="item3">Armenia</li>
+<li class="item4">Austria</li>
+<li class="item5">Azerbaijan</li>
+<li class="item6">Belarus</li>
+<li class="item7">Bhutan</li>
+</ul>
+<ul id="metadata">
+<li id="quantity">7</li>
+<li id="order">alphabetical</li>
+<li id="category">geography</li>
+<li id="list-type">encyclopedic</li>
+<li id="notes">This is a list of landlocked countries on Wikipedia</li>
+<li id="sources">https://en.wikipedia.org/wiki/List_of_landlocked_countries</li>
+<li id="details">false</li>
+</ul>
+</div>
+
+Generate a list that would accurately contain this item: <li>${selectionText}</li>
+`;
         console.log(`#3: My basePromptPrefixSelectionText which is being sent to my baseCompletion is: ${basePromptPrefix}`);
 
 
@@ -264,7 +295,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         cancelled = false;
         sendMessage(null, 'initModal');
         generateCompletionAction(info);
-        console.log("Context menu click listener sees this selection text: " + info.selectionText);
+        //console.log("Context menu click listener sees this selection text: " + info.selectionText);
     }
 
 });
