@@ -39,6 +39,9 @@ checkForKey().then((response) => {
   if (response) {
     document.getElementById('key_needed').style.display = 'none';
     document.getElementById('key_entered').style.display = 'block';
+  } else {
+    document.getElementById('key_needed').style.display = 'block';
+    document.getElementById('key_entered').style.display = 'none';
   }
 });
 

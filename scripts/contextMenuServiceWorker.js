@@ -71,7 +71,7 @@ const generate = async (prompt) => {
         body: JSON.stringify({
             model: 'text-davinci-003',
             prompt: prompt,
-            max_tokens: 650,
+            max_tokens: 850,
             temperature: 0.2,
             stream: true,
         }),
@@ -129,72 +129,112 @@ const generateCompletionAction = async (info) => {
 
         let { selectionText } = info;
         console.log("#2: my selectionText is: " + selectionText);
-        const basePromptPrefix =
+//         const basePromptPrefix =
+// `Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
+
+// Generate a list that would accurately contain this item: <li>the godfather</li><li id="details">true</li>
+// <h2 id="list-title">AFI's 100 Years...100 Movies</h2>
+// <li class="item1">Citizen Kane</li>
+// <li class="item2">Casablanca</li>
+// <li class="item3">The Godfather</li>
+// <li class="item4">Gone with the Wind</li>
+// <li class="item5">Lawrence of Arabia</li>
+// <li class="item6">The Wizard of Oz</li>
+// <li class="item7">The Graduate</li>
+// <li class="item8">On the Waterfront</li>
+// <li class="item9">Schindler's List</li>
+// <li class="item10">Singin' in the Rain</li>
+// <li class="metadata quantity">10</li>
+// <li class="metadata order">quality</li>
+// <li class="metadata category">film</li>
+// <li class="metadata list-type">evaluative</li>
+// <li class="metadata notes">This is the first 10 of the AFI's 100 years...100 movies list.</li>
+// <li class="metadata sources">https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies</li>
+// <li class="metadata details">true</li>
+// <li class="details item1">1941, directed by Orson Welles, produced by RKO Radio Pictures</li>
+// <li class="details item2">1942, directed by Michael Curtiz, produced by Warner Bros. Pictures</li>
+// <li class="details item3">1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions</li>
+// <li class="details item4">1939, directed by Victor Fleming, produced by Selznick International Pictures</li>
+// <li class="details item5">1962, directed by David Lean, produced by Horizon Pictures</li>
+// <li class="details item6">1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer</li>
+// <li class="details item7">1967, directed by Mike Nichols, produced by Lawrence Turman</li>
+// <li class="details item8">1954, directed by Elia Kazan, produced by Horizon-American Pictures</li>
+// <li class="details item9">1993, directed by Steven Spielberg, produced by Amblin Entertainment</li>
+// <li class="details item10">1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer</li>      
+
+// Generate a list that would accurately contain this item: <li>Azerbaijan</li><li id="order">alphabetical</li>
+// <h2 id="list-title">Wikipedia List of Landlocked Countries</h2>
+// <li class="item1">Afghanistan</li>
+// <li class="item2">Andorra</li>
+// <li class="item3">Armenia</li>
+// <li class="item4">Austria</li>
+// <li class="item5">Azerbaijan</li>
+// <li class="item6">Belarus</li>
+// <li class="item7">Bhutan</li>
+// <li class="metadata quantity">7</li>
+// <li class="metadata order">alphabetical</li>
+// <li class="metadata category">geography</li>
+// <li class="metadata list-type">encyclopedic</li>
+// <li class="metadata notes">This is a list of landlocked countries on Wikipedia</li>
+// <li class="metadata sources">https://en.wikipedia.org/wiki/List_of_landlocked_countries</li>
+// <li class="metadata details">false</li>
+
+// Generate a list that would accurately contain this item: <li>${selectionText}</li><li class="metadata list-type">evaluative</li>
+// `;
+
+const basePromptPrefix =
 `Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
 
-Generate a list that would accurately contain this item: <li>the godfather</li><li id="details">true</li>
-<div id="list">
-<h2 id="list-title">AFI's 100 Years...100 Movies</h2>
-<ul id="items">
-<li class="item1">Citizen Kane</li>
-<li class="item2">Casablanca</li>
-<li class="item3">The Godfather</li>
-<li class="item4">Gone with the Wind</li>
-<li class="item5">Lawrence of Arabia</li>
-<li class="item6">The Wizard of Oz</li>
-<li class="item7">The Graduate</li>
-<li class="item8">On the Waterfront</li>
-<li class="item9">Schindler's List</li>
-<li class="item10">Singin' in the Rain</li>
-</ul>
-<ul id="metadata">
-<li id="quantity">10</li>
-<li id="order">quality</li>
-<li id="category">film</li>
-<li id="list-type">evaluative</li>
-<li id="notes">This is the first 10 of the AFI's 100 years...100 movies list.</li>
-<li id="sources">https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies</li>
-<li id="details">true</li>
-</ul>
-<ul id="details">
-<li class="item1">1941, directed by Orson Welles, produced by RKO Radio Pictures</li>
-<li class="item2">1942, directed by Michael Curtiz, produced by Warner Bros. Pictures</li>
-<li class="item3">1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions</li>
-<li class="item4">1939, directed by Victor Fleming, produced by Selznick International Pictures</li>
-<li class="item5">1962, directed by David Lean, produced by Horizon Pictures</li>
-<li class="item6">1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer</li>
-<li class="item7">1967, directed by Mike Nichols, produced by Lawrence Turman</li>
-<li class="item8">1954, directed by Elia Kazan, produced by Horizon-American Pictures</li>
-<li class="item9">1993, directed by Steven Spielberg, produced by Amblin Entertainment</li>
-<li class="item10">1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer</li>
-</ul>
-</div>        
+Generate a list that would accurately contain this item: the godfather list-details: true
+list-title:AFI's 100 Years...100 Movies
+item-1:Citizen Kane
+item-2:Casablanca
+item-3:The Godfather
+item-4:Gone with the Wind
+item-5:Lawrence of Arabia
+item-6:The Wizard of Oz
+item-7:The Graduate
+item-8:On the Waterfront
+item-9:Schindler's List
+item-10:Singin' in the Rain
+list-quantity:10
+list-order:quality
+list-category:film
+list-type:evaluative
+list-notes:This is the first 10 of the AFI's 100 years...100 movies list.
+list-sources:https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies
+list-details:true
+details-item-1:1941, directed by Orson Welles, produced by RKO Radio Pictures
+details-item-2:1942, directed by Michael Curtiz, produced by Warner Bros. Pictures
+details-item-3:1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions
+details-item-4:1939, directed by Victor Fleming, produced by Selznick International Pictures
+details-item-5:1962, directed by David Lean, produced by Horizon Pictures
+details-item-6:1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer
+details-item-7:1967, directed by Mike Nichols, produced by Lawrence Turman
+details-item-8:1954, directed by Elia Kazan, produced by Horizon-American Pictures
+details-item-9:1993, directed by Steven Spielberg, produced by Amblin Entertainment
+details-item-10:1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer
 
-Generate a list that would accurately contain this item: <li>Azerbaijan</li><li id="order">alphabetical</li>
-<div id="list">
-<h2 id="list-title">Wikipedia List of Landlocked Countries</h2>
-<ul id="items">
-<li class="item1">Afghanistan</li>
-<li class="item2">Andorra</li>
-<li class="item3">Armenia</li>
-<li class="item4">Austria</li>
-<li class="item5">Azerbaijan</li>
-<li class="item6">Belarus</li>
-<li class="item7">Bhutan</li>
-</ul>
-<ul id="metadata">
-<li id="quantity">7</li>
-<li id="order">alphabetical</li>
-<li id="category">geography</li>
-<li id="list-type">encyclopedic</li>
-<li id="notes">This is a list of landlocked countries on Wikipedia</li>
-<li id="sources">https://en.wikipedia.org/wiki/List_of_landlocked_countries</li>
-<li id="details">false</li>
-</ul>
-</div>
+Generate a list that would accurately contain this item: Azerbaijan list-order:alphabetical
+list-title:Wikipedia List of Landlocked Countries
+item-1:Afghanistan
+item-2:Andorra
+item-3:Armenia
+item-4:Austria
+item-5:Azerbaijan
+item-6:Belarus
+item-7:Bhutan
+list-quantity:7
+list-order:alphabetical
+list-category:geography
+list-type:encyclopedic
+list-notes:This is a list of landlocked countries on Wikipedia
+list-sources:https://en.wikipedia.org/wiki/List_of_landlocked_countries
+list-details:false
 
-Generate a list that would accurately contain this item: <li>${selectionText}</li>
+Generate a list that would accurately contain this item: ${selectionText} details:true
 `;
+
         console.log(`#3: My basePromptPrefixSelectionText which is being sent to my baseCompletion is: ${basePromptPrefix}`);
 
 

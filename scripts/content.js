@@ -1,6 +1,7 @@
 
 let modal = null;
 let modalContent = null;
+let headerContainer = null;
 let modalRect = null;
 let storedPositionModal;
 let modalIsLeft = false;
@@ -11,27 +12,47 @@ let processorTextBuffer = '';
 let asSidebar = false;
 
 //cursor for when list is loading:
-let cursorLoading;
+let cursorLoading = null;
 
-function showCursor() {
-
-    const cursor = document.querySelector('.list-cursor');
-    if (!cursor) return;
-
+function showCursor(element) {
+    const existingCursor = document.querySelector('.lb-cursor');
+    if (existingCursor) {
+        existingCursor.remove();
+    }
+    let cursor = document.createElement("span");
+    cursor.classList.add("lb-cursor");
     cursor.style.display = 'inline-block';
     cursor.style.width = '5px';
-    cursor.style.height = '20px';
+    cursor.style.height = '14px';
     cursor.style.backgroundColor = '#ccc';
+    cursor.style.position = 'absolute';
+
+    if (!element) {
+        return;
+    }
+
+    setTimeout(() => {
+        cursor.style.top = element.offsetTop + 'px';
+        cursor.style.left = (element.offsetLeft + element.offsetWidth) + 'px';
+    }, 0);
+
     let counter = 0;
     cursorLoading = setInterval(() => {
         cursor.style.opacity = counter % 2 === 0 ? '.5' : '1';
         counter++;
     }, 200);
+
+
+    if (element) {
+        element.appendChild(cursor);
+    } else if (modalContent) {
+        modalContent.appendChild(cursor);
+    }
 }
 
 function hideCursor() {
     clearInterval(cursorLoading);
-    const cursor = document.querySelector('.list-cursor');
+    const cursor = document.querySelector('.lb-cursor');
     cursor ?
         cursor.style.display = 'none' : null;
 }
@@ -47,7 +68,7 @@ const createModal = () => {
 
     //create modal div:
     modal = document.createElement("div");
-    modal.classList.add("listModal");
+    modal.classList.add("lb-modal");
 
     //Text selection and setting up positioning of modal and arrow:
     let selection = window.getSelection();
@@ -58,30 +79,30 @@ const createModal = () => {
 
 
     modal.innerHTML = `
-    <div class="modalClose"></div>
-    <div class="modal-content"></div><span class="list-cursor"></span>`;
+    <div class="lb-modal-close"></div>
+    <div class="lb-modal-content"><div class="lb-header-container"></div></div>`;
 
     // Append the modal to the page
     document.body.appendChild(modal);
-    showCursor();
+    showCursor(modalContent);
 
-    modal.style.cssText = `
-    display: none;
-    position: fixed;
-    top: 100%;
-    left: 100%;
-    margin: 0;
-    width: 300px; /* adjust as needed */
-    background-color: #333;
-    border: 1px solid;
-    border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
-    border-image-slice: 1;
-    padding: 20px;
-    z-index: 2147483645;
-    border-radius: 10px;
-    color: #fff;
-    transition: all 0.2s ease-out;
-    `;
+    // modal.style.cssText = `
+    // display: none;
+    // position: fixed;
+    // top: 100%;
+    // left: 100%;
+    // margin: 0;
+    // width: 300px; /* adjust as needed */
+    // background-color: #333;
+    // border: 1px solid;
+    // border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
+    // border-image-slice: 1;
+    // padding: 20px;
+    // z-index: 2147483645;
+    // border-radius: 10px;
+    // color: #fff;
+    // transition: all 0.2s ease-out;
+    // `;
 
 
     const positionModal = () => {
@@ -115,11 +136,11 @@ const createModal = () => {
         modal.style.display = `block`;
 
         // Check if the arrow already exists
-        let arrow = document.querySelector(".modalArrow");
+        let arrow = document.querySelector(".lb-modal-arrow");
         if (!arrow) {
             // Create the arrow
             arrow = document.createElement("div");
-            arrow.className = "modalArrow";
+            arrow.className = "lb-modal-arrow";
             arrow.style.position = "fixed";
             arrow.style.display = "none";
             arrow.style.width = "20px";
@@ -138,54 +159,18 @@ const createModal = () => {
 
     };
     storedPositionModal = positionModal;
-    storedPositionModal(); 
+    storedPositionModal();
 
-    // Add styles to the modal-content using cssText
-    modalContent = modal.querySelector('.modal-content');
-    modalContent.style.cssText = `
-       overflow: auto; /* allows for scrolling if the list is long */
-       max-height: 80vh; /* limits the height of the modal-content */
-    `;
+    modalContent = modal.querySelector('.lb-modal-content');
+    headerContainer = modalContent.querySelector('.lb-header-container');
+
 
     // closeBtn
-    const closeBtn = document.querySelector('.modalClose');
-
-    //     closeBtn.style.cssText = `
-    //    position: absolute;
-    //    top: -10px;
-    //    right: -12px;
-    //    width: 30px;
-    //    height: 30px;
-    //    text-align: center;
-    //    line-height: 40px;
-    //    font-size: 30px;
-    //    color: #fff;
-    //    background-color: #3f87a6;
-    //    border-radius: 50%;
-    //    cursor: pointer;
-    //    z-index: 2147483646;
-    // `;
+    const closeBtn = document.querySelector('.lb-modal-close');
     closeBtn.innerHTML = "&times;";
-    closeBtn.style.cssText = `
-  position: absolute;
-  top: -10px;
-  right: -12px;
-  width: 30px;
-  height: 30px;
-  text-align: center;
-  background: linear-gradient(to bottom right, #DA7E00, #F46D00);
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  z-index: 2147483646;
-`;
-
 
     modalCloseListener = (event) => {
-        if (event.target.classList.contains('modalClose') ||
+        if (event.target.classList.contains('lb-modal-close') ||
             (modal && modal.contains && !modal.contains(event.target))) {
             if (modal) {
                 modal.parentNode.removeChild(modal);
@@ -198,9 +183,6 @@ const createModal = () => {
 
     ///////////positioning of modal:
     modalRect = modal.getBoundingClientRect();
-      
-      
-
 };
 
 ///////////////////////////////////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
@@ -241,7 +223,7 @@ const updateModalStream = (streamData) => {
             // if (lineText.indexOf('\n') !== -1) {
             //     lineText = lineText.replace(/\n/g, '<br>');
             // }
-            
+
 
             // // your code to update the modal with the data
             // if (!modal) {
@@ -265,25 +247,144 @@ const updateModalStream = (streamData) => {
     });
 };
 
-//this works:
+//just for an alert
+let firstTime = true;
+
+///////////////////////////////////////////PROCESSOR VERSION: 3+1 TYPES /////////////////////////////////////////////
 let modalBuffer = "";
+let itemsUL;
 const updateModalProcessor = (text) => {
     if (!modal) {
         console.error("The modal element was not found.");
         return;
     }
-
     modalBuffer += text;
     let lines = modalBuffer.split("\n");
     if (lines.length > 1) {
         modalBuffer = lines.pop();
-        let completeLines = lines.join("\n");
-        modalContent.innerHTML = modalContent.innerHTML + completeLines;
+        lines.forEach((line) => {
+            if (line.startsWith("list-title:")) {
+                //create current list title as an h2
+                let currentListTitleText = line.replace("list-title:", "");
+                let currentListTitle = document.createElement("h2");
+                currentListTitle.innerText = currentListTitleText;
+                currentListTitle.classList.add("lb-current-list-title");
+                // create prev/next buttons
+                let prevButton = document.createElement("button");
+                prevButton.innerText = "<";
+                prevButton.classList.add("lb-prev-button");
+                headerContainer.appendChild(prevButton);
+                headerContainer.appendChild(currentListTitle);
+                showCursor(currentListTitle);
+                let nextButton = document.createElement("button");
+                nextButton.innerText = ">";
+                nextButton.classList.add("lb-next-button");
+                headerContainer.appendChild(nextButton);
+                showCursor(nextButton);
+            } else if (line.startsWith("item-")) {
+                // if no UL with class="items", create one
+                itemsUL = document.querySelector(".lb-items-ul");
+                if (!itemsUL) {
+                    itemsUL = document.createElement("ul");
+                    itemsUL.classList.add("lb-items-ul");
+                    modalContent.appendChild(itemsUL);
+                }
+                // create list item
+                let itemText = line.replace(/^item-[0-9]+:/, "");
+                let itemLI = document.createElement("li");
+                itemLI.innerText = itemText;
+                let itemNum = line.split(":")[0].replace("item-", "");
+                itemLI.classList.add("lb-item-li", "item-" + itemNum);
+                itemsUL.appendChild(itemLI);
+                showCursor(itemLI);
+            } else if (line.startsWith("list-")) {
+                // create button for list metadata
+                let metadataText = line.replace(/^list-/, "");
+                let metadata = metadataText.split(":");
+                let button = document.createElement("button");
+                button.innerText = metadata[0];
+                let buttonClass = "lb-metadata-" + metadata[0];
+                let buttonVariable = "metadataButton" + metadata[0];
+                button.classList.add("lb-metadata", buttonClass);
+                window[buttonVariable] = button;
+                button.dataset[metadata[0]] = metadata[1];
+                modalContent.appendChild(button);
+                showCursor(button);
+            }
+            else if (line.startsWith("details-")) {
+                // add details to corresponding list item
+                let detailsText = line.replace(/^details-item-/, "");
+                let details = detailsText.split(":");
+                let itemId = "item-" + details[0];
+                let item = itemsUL.querySelector("." + itemId);
+                if (item) {
+                    let detailsP = document.createElement("p");
+                    detailsP.innerText = details[1];
+                    detailsP.classList.add("lb-item-details");
+                    item.appendChild(detailsP);
+                    showCursor(detailsP);
+                }
+            } else {
+                showCursor(modalContent);
+                modalContent.innerHTML = modalContent.innerHTML + line + "\n";
+                hideCursor();
+            }
+        });
     }
-
     //modal positioning
     storedPositionModal();
 };
+
+
+
+
+
+
+
+// let modalBuffer = "";
+// let headerCreated = false;
+// const updateModalProcessor = (text) => {
+//     if (!modal) {
+//         console.error("The modal element was not found.");
+//         return;
+//     }
+//     modalBuffer += text;
+//     let lines = modalBuffer.split("\n");
+//     if (lines.length > 1) {
+//         modalBuffer = lines.pop();
+//         lines.forEach((line) => {
+//             if (line.startsWith("list-title:")) {
+//                 if (!headerCreated) {
+//                     //create current list title as an h2
+//                     let currentListTitleText = line.replace("list-title:", "");
+//                     let currentListTitle = document.createElement("h2");
+//                     currentListTitle.innerText = currentListTitleText;
+//                     currentListTitle.classList.add("lb-current-list-title");
+//                     // create prev/next buttons
+//                     let headerContainer = document.createElement("div");
+//                     headerContainer.classList.add("lb-header-container");
+//                     let prevButton = document.createElement("button");
+//                     prevButton.innerText = "<";
+//                     prevButton.classList.add("lb-prev-button");
+//                     headerContainer.appendChild(prevButton);
+//                     headerContainer.appendChild(currentListTitle);
+//                     let nextButton = document.createElement("button");
+//                     nextButton.innerText = ">";
+//                     nextButton.classList.add("lb-next-button");
+//                     headerContainer.appendChild(nextButton);
+//                     modalContent.appendChild(headerContainer);
+//                     headerCreated = true;
+//                 }
+//             } else {
+//                 modalContent.innerHTML = modalContent.innerHTML + line + "\n";
+//             }
+//         });
+//     }
+//     //modal positioning
+//     storedPositionModal();
+// };
+
+
 
 //this works to display the stream data in the modal but it cuts off the <div part of each line:
 // const updateModalProcessor = (text) => {
@@ -367,9 +468,11 @@ const updateModalProcessor = (text) => {
 // };
 
 const updateDone = () => {
+    let doneText = "\n";
+    updateModalProcessor(doneText);
     hideCursor();
     console.log("//////// Update Text is //////" + updateTextBuffer);
-    console.log("//////// Processor Text is //////" + processorTextBuffer);
+    console.log("//////// Processor Text is //////" + "<br>" + processorTextBuffer);
 };
 
 /////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////
@@ -378,7 +481,7 @@ const updateModal = (content) => {
     hideCursor();
     const { firstLine, lineListItems } = parseList(content);
     modal.innerHTML = `<div class="modal-content">
-    <span class="modalClose">&times;</span>
+    <span class="modal-close">&times;</span>
     <div class="list-loading"></div>
     <h2>${firstLine}</h2>
     <ul>
@@ -422,20 +525,20 @@ const updateModal = (content) => {
 
     ///////////end modal positioning//////////////////
 
-    modal.querySelector('.modal-content h2').style.cssText = `
+    modal.querySelector('.lb-modal-content h2').style.cssText = `
    font-size: 1rem;
    margin-top: 0;
    text-align: center;
    color: #666;
    width: 80%;
 `;
-    modal.querySelector('.modal-content ul').style.cssText = `
+    modal.querySelector('.lb-modal-content ul').style.cssText = `
    list-style: none;
    margin: 0;
    padding: 0;
 `;
 
-    const li = modal.querySelectorAll('.modal-content li');
+    const li = modal.querySelectorAll('.lb-modal-content li');
     if (li.length > 0) {
         li.forEach(el => {
             el.style.cssText = `
@@ -471,7 +574,7 @@ const updateModal = (content) => {
 
     // the arrow buttons to generate new lists and scroll between them
     // ARROW CONTENT NOT CURRENTLY ADDED
-    const arrowButtons = modal.querySelectorAll('.modal-content .arrow-btn');
+    const arrowButtons = modal.querySelectorAll('.lb-modal-content .lb-arrow-btn');
     if (arrowButtons.length) {
         arrowButtons.forEach(btn => {
             btn.style.cssText = `
@@ -537,7 +640,7 @@ const insert = (content) => {
     console.log("content is typeof: " + typeof content);
 
     // remove the modal after inserting new text:
-    let modal = document.querySelector(".listModal");
+    let modal = document.querySelector(".list-modal");
     modal.style.display = 'none';
     createModalCloseListener();
     return true;
