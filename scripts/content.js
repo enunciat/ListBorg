@@ -21,32 +21,27 @@ function showCursor(element) {
     }
     let cursor = document.createElement("span");
     cursor.classList.add("lb-cursor");
-    cursor.style.display = 'inline-block';
-    cursor.style.width = '5px';
-    cursor.style.height = '14px';
-    cursor.style.backgroundColor = '#ccc';
-    cursor.style.position = 'absolute';
-
+    //make it the same height as the element:
     if (!element) {
         return;
     }
 
     setTimeout(() => {
-        cursor.style.top = element.offsetTop + 'px';
-        cursor.style.left = (element.offsetLeft + element.offsetWidth) + 'px';
+        cursor.style.top = `${element.offsetTop + (element.offsetHeight - cursor.offsetHeight) / 2}px`;
+        cursor.style.left = `${element.offsetLeft + element.offsetWidth + 20}px`;
+    
     }, 0);
 
     let counter = 0;
     cursorLoading = setInterval(() => {
-        cursor.style.opacity = counter % 2 === 0 ? '.5' : '1';
+        cursor.style.opacity = counter % 2 === 0 ? '0' : '1';
         counter++;
-    }, 200);
-
-
+    }, 500);
     if (element) {
         element.appendChild(cursor);
     } else if (modalContent) {
         modalContent.appendChild(cursor);
+        cursor.style.height = '20px';
     }
 }
 
@@ -318,11 +313,11 @@ const updateModalProcessor = (text) => {
                 let itemId = "item-" + details[0];
                 let item = itemsUL.querySelector("." + itemId);
                 if (item) {
-                    let detailsP = document.createElement("p");
-                    detailsP.innerText = details[1];
-                    detailsP.classList.add("lb-item-details");
-                    item.appendChild(detailsP);
-                    showCursor(detailsP);
+                    let detailsSpan = document.createElement("span");
+                    detailsSpan.innerText = details[1];
+                    detailsSpan.classList.add("lb-item-details");
+                    item.appendChild(detailsSpan);
+                    showCursor(detailsSpan);
                 }
             } else {
                 showCursor(modalContent);
@@ -472,7 +467,7 @@ const updateDone = () => {
     updateModalProcessor(doneText);
     hideCursor();
     console.log("//////// Update Text is //////" + updateTextBuffer);
-    console.log("//////// Processor Text is //////" + "<br>" + processorTextBuffer);
+    console.log(processorTextBuffer);
 };
 
 /////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////

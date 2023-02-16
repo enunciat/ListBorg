@@ -24,6 +24,15 @@
     max-height: 80vh;
 }
 
+.lb-cursor {
+    display: inline-block;
+    width: 5px;
+    height: 14px;
+    background-color: #ccc;
+    left: 50px;
+    transition: all 0.5s ease-in-out;
+}
+
 .lb-modal-close {
     position: absolute;
     top: -10px;
@@ -71,28 +80,31 @@ h2 {
     margin-left: 10px;
 }
 
-
-#items li {
-    /* useless because browser just closes <ul id="items"></ul> right away */
-}
-
-
 li[class*="item"] {
     display: block;
     text-decoration: none;
     color: lightgrey;
 }
 
-li[class*="metadata"] {
-    /* useless */
-}
-
-.lb-item-details {
+span.lb-item-details {
+    margin: 0px;
+    padding: 0px;
     font-size: smaller;
     color: gray;
-    margin-left: 1em;
+    display: inline;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    background-color: #333;
+    border-radius: 5px;
 }
 
-.lb-cursor {
-    transition: all 0.5s ease-in-out;
+span.lb-item-details:before {
+    content: ' (';
 }
+
+span.lb-item-details:after {
+    content: ')';
+}
+
+
+
