@@ -107,15 +107,25 @@ const generate = async (prompt) => {
 // cancelling
 let cancelled = false;
 
-chrome.runtime.onMessage.addListener(
-    (request, sender, sendResponse) => {
-        if (request.message === 'cancel_generate') {
-            // code to cancel the OpenAI request
-            cancelled = true;
-        }
-
+//integrated listener for cancelling and for all modal prompt submissions:
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.message === 'cancel_generate') {
+      // code to cancel the OpenAI request
+      cancelled = true;
+    } else if (request.message === 'send_prompt') {
+        
+      // send the new prompt to the OpenAI API
+      sendMessage(null, 'initModal');
+      const promptModal = request.prompt;
+      generateCompletionAction(promptModal).then(response => {
+        alert("generateCompletionAction was called");
+        // send the response back to the content script
+        sendResponse({ message: 'response_received', response });
+      });
+      return true;
     }
-);
+  });
+  
 
 
 //toggle Dummy mode:
@@ -129,58 +139,6 @@ const generateCompletionAction = async (info) => {
 
         let { selectionText } = info;
         console.log("#2: my selectionText is: " + selectionText);
-//         const basePromptPrefix =
-// `Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
-
-// Generate a list that would accurately contain this item: <li>the godfather</li><li id="details">true</li>
-// <h2 id="list-title">AFI's 100 Years...100 Movies</h2>
-// <li class="item1">Citizen Kane</li>
-// <li class="item2">Casablanca</li>
-// <li class="item3">The Godfather</li>
-// <li class="item4">Gone with the Wind</li>
-// <li class="item5">Lawrence of Arabia</li>
-// <li class="item6">The Wizard of Oz</li>
-// <li class="item7">The Graduate</li>
-// <li class="item8">On the Waterfront</li>
-// <li class="item9">Schindler's List</li>
-// <li class="item10">Singin' in the Rain</li>
-// <li class="metadata quantity">10</li>
-// <li class="metadata order">quality</li>
-// <li class="metadata category">film</li>
-// <li class="metadata list-type">evaluative</li>
-// <li class="metadata notes">This is the first 10 of the AFI's 100 years...100 movies list.</li>
-// <li class="metadata sources">https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies</li>
-// <li class="metadata details">true</li>
-// <li class="details item1">1941, directed by Orson Welles, produced by RKO Radio Pictures</li>
-// <li class="details item2">1942, directed by Michael Curtiz, produced by Warner Bros. Pictures</li>
-// <li class="details item3">1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions</li>
-// <li class="details item4">1939, directed by Victor Fleming, produced by Selznick International Pictures</li>
-// <li class="details item5">1962, directed by David Lean, produced by Horizon Pictures</li>
-// <li class="details item6">1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer</li>
-// <li class="details item7">1967, directed by Mike Nichols, produced by Lawrence Turman</li>
-// <li class="details item8">1954, directed by Elia Kazan, produced by Horizon-American Pictures</li>
-// <li class="details item9">1993, directed by Steven Spielberg, produced by Amblin Entertainment</li>
-// <li class="details item10">1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer</li>      
-
-// Generate a list that would accurately contain this item: <li>Azerbaijan</li><li id="order">alphabetical</li>
-// <h2 id="list-title">Wikipedia List of Landlocked Countries</h2>
-// <li class="item1">Afghanistan</li>
-// <li class="item2">Andorra</li>
-// <li class="item3">Armenia</li>
-// <li class="item4">Austria</li>
-// <li class="item5">Azerbaijan</li>
-// <li class="item6">Belarus</li>
-// <li class="item7">Bhutan</li>
-// <li class="metadata quantity">7</li>
-// <li class="metadata order">alphabetical</li>
-// <li class="metadata category">geography</li>
-// <li class="metadata list-type">encyclopedic</li>
-// <li class="metadata notes">This is a list of landlocked countries on Wikipedia</li>
-// <li class="metadata sources">https://en.wikipedia.org/wiki/List_of_landlocked_countries</li>
-// <li class="metadata details">false</li>
-
-// Generate a list that would accurately contain this item: <li>${selectionText}</li><li class="metadata list-type">evaluative</li>
-// `;
 
 const basePromptPrefix =
 `Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
@@ -232,7 +190,7 @@ list-notes:This is a list of landlocked countries on Wikipedia
 list-sources:https://en.wikipedia.org/wiki/List_of_landlocked_countries
 list-details:false
 
-Generate a list that would accurately contain this item: ${selectionText} details:true
+Generate a list that would accurately contain this item: ${selectionText}
 `;
 
         console.log(`#3: My basePromptPrefixSelectionText which is being sent to my baseCompletion is: ${basePromptPrefix}`);
@@ -262,33 +220,6 @@ Generate a list that would accurately contain this item: ${selectionText} detail
             //the AI api call:
             baseCompletion = await generate(`${basePromptPrefix}`);
         }
-
-        //stream attempt a: i disabled the line below: ///////////////////////////////
-        //const baseCompletionText = baseCompletion.text;
-
-        // stream attempt b: i disabled the line below: ///////////////////////////////
-        //sendMessage(baseCompletionText, 'modal');
-
-        //change selectedText message while waiting for it to be updated by user:
-        //sendMessage('<ListBorg ready for ' + selectionText + '>');
-
-        // Create the context menu with the baseCompletion.text
-        //createContextMenu(baseCompletionText);
-
-
-        //second prompt:
-        // const secondPrompt = `Given the following list of items: 
-        // ${baseCompletion.text}
-
-        // Ignore the exact items on the list, and compile in your memory a new complete list, which has every single possible item included the list. We will call this list in your memory the complete list. Now rank the items in this complete list in your memory, from best to worst. The best item is the item that you would most want to have, and the worst item is the item that you would least want to have.
-
-        // Now pick the best item and print it out, with no other text or information added or formatting or parentheses or anything else except the item by itself. Always print out an item even if you don't think it's truly better, just print out the next best item.
-
-        // Always make sure to print out an item that is different from ${selectionText}. 
-        // `;
-
-
-
 
         // Call your second prompt
         let secondPromptCompletion;
@@ -337,5 +268,4 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         generateCompletionAction(info);
         //console.log("Context menu click listener sees this selection text: " + info.selectionText);
     }
-
 });

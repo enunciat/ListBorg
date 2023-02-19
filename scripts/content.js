@@ -1,62 +1,23 @@
-
 let modal = null;
 let modalContent = null;
 let headerContainer = null;
+let buttonsContainer = null;
+let closeBtn = null;
 let modalRect = null;
 let storedPositionModal;
 let modalIsLeft = false;
-
 let updateTextBuffer = '';
 let processorTextBuffer = '';
-
 let asSidebar = false;
-
 //cursor for when list is loading:
 let cursorLoading = null;
-
-function showCursor(element) {
-    const existingCursor = document.querySelector('.lb-cursor');
-    if (existingCursor) {
-        existingCursor.remove();
-    }
-    let cursor = document.createElement("span");
-    cursor.classList.add("lb-cursor");
-    //make it the same height as the element:
-    if (!element) {
-        return;
-    }
-
-    setTimeout(() => {
-        cursor.style.top = `${element.offsetTop + (element.offsetHeight - cursor.offsetHeight) / 2}px`;
-        cursor.style.left = `${element.offsetLeft + element.offsetWidth + 20}px`;
-    
-    }, 0);
-
-    let counter = 0;
-    cursorLoading = setInterval(() => {
-        cursor.style.opacity = counter % 2 === 0 ? '0' : '1';
-        counter++;
-    }, 500);
-    if (element) {
-        element.appendChild(cursor);
-    } else if (modalContent) {
-        modalContent.appendChild(cursor);
-        cursor.style.height = '20px';
-    }
-}
-
-function hideCursor() {
-    clearInterval(cursorLoading);
-    const cursor = document.querySelector('.lb-cursor');
-    cursor ?
-        cursor.style.display = 'none' : null;
-}
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = () => {
     if (modal) {
         modal.parentNode.removeChild(modal);
     }
+
     //clear console text buffers:
     updateTextBuffer = '';
     processorTextBuffer = '';
@@ -64,6 +25,179 @@ const createModal = () => {
     //create modal div:
     modal = document.createElement("div");
     modal.classList.add("lb-modal");
+    modal.id = "lb-modal-id";
+    modal.innerHTML = `
+        <div class="lb-modal-close" id="lb-modal-close-id"></div>
+        <div class="lb-modal-content" id="lb-modal-content-id">
+            <div class="lb-header-container" id="lb-header-container-id"></div>
+            <div class="lb-buttons-container"" id="lb-buttons-container-id"></div>
+        </div>
+    `;
+
+    ////////////////////////////////////// STYLES //////////////////////////////////////
+
+    const style = document.createElement('style');
+    style.textContent = `
+    /* css reset: */
+    html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        font-size: 100%;
+        font: inherit;
+        font-family: Arial, sans-serif;
+        vertical-align: baseline;
+        }
+
+    /* my styles: */
+    #lb-modal-id.lb-modal {
+        display: none;
+        position: fixed;
+        top: 100%;
+        left: 100%;
+        margin: 0;
+        width: 300px;
+        /* adjust as needed */
+        background-color: #333;
+        border: 1px solid;
+        border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
+        border-image-slice: 1;
+        border-radius: 0;
+        padding: 20px;
+        z-index: 2147483645;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        transition: all 0.2s ease-out;
+    }
+    
+    #lb-modal-id .lb-modal-content {
+        /* allows for scrolling if the list is long */
+        overflow: auto;
+        /* limits the height of the modal-content */
+        max-height: 80vh;
+    }
+    
+    #lb-modal-id .lb-cursor {
+        display: inline-block;
+        width: 5px;
+        height: 14px;
+        background-color: #ccc;
+        left: 50px;
+        transition: all 0.5s ease-in-out;
+    }
+    
+    #lb-modal-id #lb-modal-close-id.lb-modal-close {
+        position: absolute;
+        top: -10px;
+        right: -12px;
+        width: 30px;
+        height: 30px;
+        text-align: center;
+        background: linear-gradient(to right, #FFAB00, #F96B00);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        z-index: 2147483646;
+        border: 1px solid linear-gradient(to bottom right, #DA7E00, #F46D00);
+    }
+    
+    #lb-modal-id .lb-header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+    
+    #lb-modal-id h2 {
+        width: 80%;
+        color: lightgrey;
+        font-size: medium;
+        /* center text */
+        text-align: center;
+        margin: 0;
+    
+    }
+    
+    #lb-modal-id .lb-next-button,
+    #lb-modal-id .lb-prev-button {
+        width: 10%;
+        text-align: center;
+    }
+    
+    #lb-modal-id .lb-prev-button {
+        margin-right: 10px;
+    }
+    #lb-modal-id .lb-next-button {
+        margin-left: 10px;
+    }
+
+    #lb-modal-content-id ul.lb-items-ul {
+        list-style: none !important;
+        text-decoration: none !important;
+    }
+    
+    #lb-modal-id li[class*="item"] {
+        display: block;
+        text-decoration: none !important;
+        color: lightgrey !important;
+        font-family: Arial, sans-serif !important;
+        list-style: none !important;
+
+    }
+    
+    #lb-modal-id span.lb-item-details {
+        margin: 0px;
+        padding: 0px;
+        font-size: smaller;
+        color: gray;
+        display: inline;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        background-color: #333 !important;
+        font-family: Arial, sans-serif !important;
+    }
+    
+    #lb-modal-id span.lb-item-details:before {
+        content: ' (';
+        list-style: none !important;
+        text-decoration: none !important;
+        padding: 0px;
+    }
+    
+    #lb-modal-id span.lb-item-details:after {
+        content: ')';
+        list-style: none !important;
+        text-decoration: none !important;
+        padding: 0px;
+    }
+    
+    #lb-modal-content-id .lb-items-ul li::before {
+        content: '' !important;
+        padding: 0px !important;
+        padding-left: 0px !important;
+      }
+      
+    ul>li {
+        padding: 0px !important;
+        list-style: none !important;
+        content: '' !important;
+    }
+    
+    /* /////////////////////////////buttons///////////////////////////// */
+    
+    
+    #lb-modal-id .lb-quantity {
+        width: 30px;
+      }
+    }
+  `;
+    document.head.appendChild(style);
+    ////////////////////////////////////// END STYLES //////////////////////////////////////
+    document.body.appendChild(modal);
+    showCursor(modalContent);
 
     //Text selection and setting up positioning of modal and arrow:
     let selection = window.getSelection();
@@ -71,34 +205,6 @@ const createModal = () => {
     let rect = range.getBoundingClientRect();
     let vw = Math.round(rect.left / window.innerWidth * 100);
     let vh = Math.round(rect.top / window.innerHeight * 100);
-
-
-    modal.innerHTML = `
-    <div class="lb-modal-close"></div>
-    <div class="lb-modal-content"><div class="lb-header-container"></div></div>`;
-
-    // Append the modal to the page
-    document.body.appendChild(modal);
-    showCursor(modalContent);
-
-    // modal.style.cssText = `
-    // display: none;
-    // position: fixed;
-    // top: 100%;
-    // left: 100%;
-    // margin: 0;
-    // width: 300px; /* adjust as needed */
-    // background-color: #333;
-    // border: 1px solid;
-    // border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
-    // border-image-slice: 1;
-    // padding: 20px;
-    // z-index: 2147483645;
-    // border-radius: 10px;
-    // color: #fff;
-    // transition: all 0.2s ease-out;
-    // `;
-
 
     const positionModal = () => {
         // Get the height of the modal
@@ -130,38 +236,44 @@ const createModal = () => {
         console.log("POSITION MODAL RAN with modal.style.top: " + modal.style.top + " and modalHeight: " + modalHeight);
         modal.style.display = `block`;
 
-        // Check if the arrow already exists
-        let arrow = document.querySelector(".lb-modal-arrow");
-        if (!arrow) {
-            // Create the arrow
-            arrow = document.createElement("div");
-            arrow.className = "lb-modal-arrow";
-            arrow.style.position = "fixed";
-            arrow.style.display = "none";
-            arrow.style.width = "20px";
-            arrow.style.height = "20px";
-            arrow.style.transform = "rotate(45deg)";
-            arrow.style.backgroundColor = "white";
-            modal.appendChild(arrow);
-        }
-        // Update the position of the arrow
-        if (modalIsLeft) {
-            arrow.style.left = `${rect.left - arrow.offsetWidth - 10}px`;
-        } else {
-            arrow.style.left = `${rect.left + rect.width + 10}px`;
-        }
-        arrow.style.top = `${rect.top + (rect.height / 2) - 10}px`;
+        //     // Check if the arrow already exists
+        //     let arrow = shadowRoot.querySelector(".lb-modal-arrow");
+        //     if (!arrow) {
+        //         // Create the arrow
+        //         arrow = document.createElement("div");
+        //         arrow.className = "lb-modal-arrow";
+        //         arrow.style.position = "fixed";
+        //         arrow.style.display = "none";
+        //         arrow.style.width = "20px";
+        //         arrow.style.height = "20px";
+        //         arrow.style.transform = "rotate(45deg)";
+        //         arrow.style.backgroundColor = "white";
+        //         modal.appendChild(arrow);
+        //     }
+        //     // Update the position of the arrow
+        //     if (modalIsLeft) {
+        //         arrow.style.left = `${rect.left - arrow.offsetWidth - 10}px`;
+        //     } else {
+        //         arrow.style.left = `${rect.left + rect.width + 10}px`;
+        //     }
+        //     arrow.style.top = `${rect.top + (rect.height / 2) - 10}px`;
 
     };
     storedPositionModal = positionModal;
     storedPositionModal();
 
+
     modalContent = modal.querySelector('.lb-modal-content');
+    // if(modalContent === null) {
+    //     alert("The modalContent was NOT found in the shadow root.");
+    // } else {
+    //     alert("modalContent was found!");
+    // }
     headerContainer = modalContent.querySelector('.lb-header-container');
+    buttonsContainer = modalContent.querySelector('.lb-buttons-container');
+    closeBtn = modal.querySelector('.lb-modal-close');
 
 
-    // closeBtn
-    const closeBtn = document.querySelector('.lb-modal-close');
     closeBtn.innerHTML = "&times;";
 
     modalCloseListener = (event) => {
@@ -172,13 +284,20 @@ const createModal = () => {
                 modal = null;
                 chrome.runtime.sendMessage({ message: 'cancel_generate' });
             }
+        } else {
+            // clicks outside the modal are handled by the host website
+            event.stopPropagation();
         }
     };
-    document.addEventListener("click", modalCloseListener);
+    modal.addEventListener("click", modalCloseListener);
 
     ///////////positioning of modal:
     modalRect = modal.getBoundingClientRect();
+
+
 };
+///////////////////////////////////////////// END CREATE MODAL /////////////////////////////////////////////
+
 
 ///////////////////////////////////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
 const updateModalStream = (streamData) => {
@@ -214,22 +333,6 @@ const updateModalStream = (streamData) => {
             // Extract the "text" value
             let lineText = data.choices[0].text;
 
-            // Replace "/n" with "<br>" in the text
-            // if (lineText.indexOf('\n') !== -1) {
-            //     lineText = lineText.replace(/\n/g, '<br>');
-            // }
-
-
-            // // your code to update the modal with the data
-            // if (!modal) {
-            //     console.error("The modal element was not found.");
-            //     return;
-            // }
-
-
-            // // update the innerHTML with the AI response
-            // modalContent.innerHTML = modalContent.innerHTML + lineText;
-
             // Call the updateModalProcessor function and pass the text to it
             updateModalProcessor(lineText);
             processorTextBuffer += lineText;
@@ -242,16 +345,12 @@ const updateModalStream = (streamData) => {
     });
 };
 
-//just for an alert
-let firstTime = true;
-
-///////////////////////////////////////////PROCESSOR VERSION: 3+1 TYPES /////////////////////////////////////////////
+///////////////////////////////////////////TEXT PROCESSOR /////////////////////////////////////////////
 let modalBuffer = "";
 let itemsUL;
 const updateModalProcessor = (text) => {
     if (!modal) {
         console.error("The modal element was not found.");
-        return;
     }
     modalBuffer += text;
     let lines = modalBuffer.split("\n");
@@ -278,7 +377,7 @@ const updateModalProcessor = (text) => {
                 showCursor(nextButton);
             } else if (line.startsWith("item-")) {
                 // if no UL with class="items", create one
-                itemsUL = document.querySelector(".lb-items-ul");
+                itemsUL = modal.querySelector(".lb-items-ul");
                 if (!itemsUL) {
                     itemsUL = document.createElement("ul");
                     itemsUL.classList.add("lb-items-ul");
@@ -296,15 +395,70 @@ const updateModalProcessor = (text) => {
                 // create button for list metadata
                 let metadataText = line.replace(/^list-/, "");
                 let metadata = metadataText.split(":");
-                let button = document.createElement("button");
-                button.innerText = metadata[0];
-                let buttonClass = "lb-metadata-" + metadata[0];
-                let buttonVariable = "metadataButton" + metadata[0];
-                button.classList.add("lb-metadata", buttonClass);
-                window[buttonVariable] = button;
-                button.dataset[metadata[0]] = metadata[1];
-                modalContent.appendChild(button);
-                showCursor(button);
+                let metadataType = metadata[0];
+                let metadataValue = metadata[1];
+                if (metadataType === "quantity") {
+                    let quantityInput = document.createElement("input");
+                    quantityInput.type = "number";
+                    quantityInput.value = metadataValue;
+                    quantityInput.classList.add("lb-quantity");
+                    headerContainer.insertBefore(quantityInput, headerContainer.firstChild);
+                } else {
+                    let button = document.createElement("button");
+                    button.innerText = `${metadataType}: ${metadataValue}`;
+                    let buttonClass = "lb-metadata-" + metadataType;
+                    button.classList.add("lb-metadata", buttonClass);
+                    button.dataset[metadataType] = metadataValue;
+                    if (metadataType === "type") {
+                        button.addEventListener("click", () => {
+                            let select = document.createElement("select");
+                            let options = ["encyclopedic", "evaluative", "top-10", "artistic"];
+                            options.forEach((option) => {
+                                let optionElement = document.createElement("option");
+                                optionElement.value = option;
+                                optionElement.text = option;
+                                select.appendChild(optionElement);
+                            });
+                            select.value = metadataValue;
+                            select.addEventListener("change", () => {
+                                button.dataset[metadataType] = select.value;
+                                button.innerText = `${metadataType}: ${select.value}`;
+                                select.remove();
+                            });
+                            button.innerText = "";
+                            button.appendChild(select);
+                            select.focus();
+                        });
+                    } else if (metadataType === "details") {
+                        button.innerText = "Details: On";
+                        button.addEventListener("click", () => {
+                            if (button.innerText === "Details: On") {
+                                button.innerText = "Details: Off";
+                                button.dataset[metadataType] = "off";
+                            } else {
+                                button.innerText = "Details: On";
+                                button.dataset[metadataType] = "on";
+                            }
+                        });
+                    } else {
+                        button.addEventListener("click", () => {
+                            let input = document.createElement("input");
+                            input.value = metadataValue;
+                            input.addEventListener("keydown", (event) => {
+                                if (event.key === "Enter") {
+                                    button.dataset[metadataType] = input.value;
+                                    button.innerText = `${metadataType}: ${input.value}`;
+                                    input.remove();
+                                }
+                            });
+                            button.innerText = "";
+                            button.appendChild(input);
+                            input.focus();
+                        });
+                    }
+                    buttonsContainer.appendChild(button);
+                }
+                addMetadataButtonListeners();
             }
             else if (line.startsWith("details-")) {
                 // add details to corresponding list item
@@ -326,141 +480,43 @@ const updateModalProcessor = (text) => {
             }
         });
     }
+    //also added button listener above after each "list-" line
+    addMetadataButtonListeners();
     //modal positioning
     storedPositionModal();
 };
 
 
+function addMetadataButtonListeners() {
+
+    const metadataButtons = modal.querySelectorAll('.lb-metadata');
+    let selectedText = '';
+    let selectedKey = '';
+    let selectedValue = '';
+
+    metadataButtons.forEach(button => {
+        button.addEventListener('click', (event) => {
+            selectedText = window.getSelection().toString();
+            selectedKey = event.target.dataset.key;
+            selectedValue = event.target.value;
+        });
+
+        button.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                chrome.runtime.sendMessage({
+                    message: 'send_prompt',
+                    prompt: {
+                        selectionText: selectedText,
+                        key: selectedKey,
+                        value: selectedValue
+                    }
+                });
+            }
+        });
+    });
+}
 
 
-
-
-
-// let modalBuffer = "";
-// let headerCreated = false;
-// const updateModalProcessor = (text) => {
-//     if (!modal) {
-//         console.error("The modal element was not found.");
-//         return;
-//     }
-//     modalBuffer += text;
-//     let lines = modalBuffer.split("\n");
-//     if (lines.length > 1) {
-//         modalBuffer = lines.pop();
-//         lines.forEach((line) => {
-//             if (line.startsWith("list-title:")) {
-//                 if (!headerCreated) {
-//                     //create current list title as an h2
-//                     let currentListTitleText = line.replace("list-title:", "");
-//                     let currentListTitle = document.createElement("h2");
-//                     currentListTitle.innerText = currentListTitleText;
-//                     currentListTitle.classList.add("lb-current-list-title");
-//                     // create prev/next buttons
-//                     let headerContainer = document.createElement("div");
-//                     headerContainer.classList.add("lb-header-container");
-//                     let prevButton = document.createElement("button");
-//                     prevButton.innerText = "<";
-//                     prevButton.classList.add("lb-prev-button");
-//                     headerContainer.appendChild(prevButton);
-//                     headerContainer.appendChild(currentListTitle);
-//                     let nextButton = document.createElement("button");
-//                     nextButton.innerText = ">";
-//                     nextButton.classList.add("lb-next-button");
-//                     headerContainer.appendChild(nextButton);
-//                     modalContent.appendChild(headerContainer);
-//                     headerCreated = true;
-//                 }
-//             } else {
-//                 modalContent.innerHTML = modalContent.innerHTML + line + "\n";
-//             }
-//         });
-//     }
-//     //modal positioning
-//     storedPositionModal();
-// };
-
-
-
-//this works to display the stream data in the modal but it cuts off the <div part of each line:
-// const updateModalProcessor = (text) => {
-//     // your code to process the text and update the modal with the data
-//     if (!modal) {
-//         console.error("The modal element was not found.");
-//         return;
-//     }
-
-//     // update the innerHTML with the AI response
-//     modalContent.innerHTML = modalContent.innerHTML + text;
-
-//     //reminder of modal.innerHTML:
-//     // modal.innerHTML = `
-//     // <div class="modalClose"></div>
-//     // <div class="modal-content"></div><span class="list-cursor"></span>`;
-
-//     //modal positioning
-//     storedPositionModal();
-// };
-
-
-
-// the following doesn't work to parse stream events into JSON:
-/////22222222222222222222/////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
-// const updateModalStream = (streamData) => {
-//     console.log("updateModalStream called with streamData: " + streamData);
-
-//     let jsonString = '';
-//     let startIndex = 0;
-//     let endIndex = 0;
-
-//     const chunks = streamData.split('data: ');
-
-//     chunks.forEach(chunk => {
-//         if (!chunk.trim()) {
-//             return;
-//         }
-
-//         for (let i = 0; i < chunk.length; i++) {
-//             if (chunk[i] === '{') {
-//                 startIndex = i;
-//             } else if (chunk[i] === '}') {
-//                 endIndex = i + 1;
-//                 jsonString = chunk.substring(startIndex, endIndex);
-
-//                 try {
-//                     let data = JSON.parse(jsonString);
-//                     //console.log("the DATA is the following: " + data);
-
-//                     let items = data.items;
-//                     let itemList = '';
-
-//                     // Create a list of items
-//                     items.forEach(item => {
-//                         itemList += '<li>' + item.item + ': ' + item.details + '</li>';
-//                     });
-
-//                     // your code to update the modal with the data
-//                     if (!modal) {
-//                         console.error("The modal element was not found.");
-//                         return;
-//                     }
-
-//                     // update the innerHTML with the AI response
-//                     modalContent.innerHTML = modalContent.innerHTML + '<ul>' + itemList + '</ul>';
-
-//                     //modal positioning
-//                     storedPositionModal();
-//                 } catch (error) {
-//                     console.error("My Error parsing JSON: " + error);
-//                 }
-
-//                 // Reset the variables for the next JSON string
-//                 jsonString = '';
-//                 startIndex = 0;
-//                 endIndex = 0;
-//             }
-//         }
-//     });
-// };
 
 const updateDone = () => {
     let doneText = "\n";
@@ -470,178 +526,90 @@ const updateDone = () => {
     console.log(processorTextBuffer);
 };
 
-/////////////////////////////////////////// UPDATE MODAL /////////////////////////////////////////////
-const updateModal = (content) => {
-    if (!modal) return;
-    hideCursor();
-    const { firstLine, lineListItems } = parseList(content);
-    modal.innerHTML = `<div class="modal-content">
-    <span class="modal-close">&times;</span>
-    <div class="list-loading"></div>
-    <h2>${firstLine}</h2>
-    <ul>
-    ${lineListItems}
-    </ul>
-    </div>`;
-
-    ///////////Modal (Update) Positioning//////////////////
-    let selection = window.getSelection();
-    let range = selection.getRangeAt(0);
-    let rect = range.getBoundingClientRect();
-    let vw = Math.round(rect.left / window.innerWidth * 100);
-    let vh = Math.round(rect.top / window.innerHeight * 100);
-    console.log("before UPDATE off-window checks" + vw + "vw, " + vh + "vh");
-    //off-window checks:
-    // if (vh + modal.offsetHeight > 100) {
-    //     vh = 100 - modal.offsetHeight;
-    // }
-    // if (vw + modal.offsetWidth > 100) {
-    //     vw = 100 - modal.offsetWidth;
-    // }
-
-    console.log("AFTER UPDATE off-window checks: " + vw + "vw, " + vh + "vh");
-    //end off-window checks////////
-
-    modal.style.cssText = `
-      display: block;
-      position: fixed;
-      top: ${vh}vh;
-      left: ${vw}vw;
-      margin: 0;
-      width: 300px; /* adjust as needed */
-      background-color: white;
-      border: 1px solid #ccc;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-      padding: 10px;
-
-      z-index: 2147483645;
-      border-radius: 10px;
-      `;
-
-    ///////////end modal positioning//////////////////
-
-    modal.querySelector('.lb-modal-content h2').style.cssText = `
-   font-size: 1rem;
-   margin-top: 0;
-   text-align: center;
-   color: #666;
-   width: 80%;
-`;
-    modal.querySelector('.lb-modal-content ul').style.cssText = `
-   list-style: none;
-   margin: 0;
-   padding: 0;
-`;
-
-    const li = modal.querySelectorAll('.lb-modal-content li');
-    if (li.length > 0) {
-        li.forEach(el => {
-            el.style.cssText = `
-   padding: 5px 0;
-   font-size: .7rem;
-   color: #666;
-   transition: background-color 0.2s ease-in-out;
-   user-select: none;
-`;
-            el.addEventListener('mouseover', () => {
-                el.style.backgroundColor = red;
-            });
-            el.addEventListener('mouseout', () => {
-                el.style.backgroundColor = '';
-            });
-            el.addEventListener('click', (event) => {
-                let item = event.target.textContent;
-                if (item.indexOf("(") !== -1) {
-                    item = item.substring(0, item.indexOf("("));
-                }
-
-                console.log("before replace, the item is: " + item);
-                // check for numbers and period before the first word
-                item = item.replace(/^\s*\d*\.?\s*/, "");
-                console.log("after replace, the item is: " + item);
-
-                // console log what type item is:
-                console.log("item is typeof: " + typeof item);
-                insert(item);
-            });
-        });
+function showCursor(element) {
+    const existingCursor = modal.querySelector('.lb-cursor');
+    if (existingCursor) {
+        existingCursor.remove();
     }
+    let cursor = document.createElement("span");
+    cursor.classList.add("lb-cursor");
+    modal.appendChild(cursor);
+    //make it the same height as the element:
+    setTimeout(() => {
+        if (!element) {
+            modalContent.appendChild(cursor);
+            cursor.style.height = '20px';
+        } else {
+            element.appendChild(cursor);
+            cursor.style.top = `${element.offsetTop + (element.offsetHeight - cursor.offsetHeight) / 2}px`;
+            cursor.style.left = `${element.offsetLeft + element.offsetWidth + 20}px`;
+        }
 
-    // the arrow buttons to generate new lists and scroll between them
-    // ARROW CONTENT NOT CURRENTLY ADDED
-    const arrowButtons = modal.querySelectorAll('.lb-modal-content .lb-arrow-btn');
-    if (arrowButtons.length) {
-        arrowButtons.forEach(btn => {
-            btn.style.cssText = `
-            color: #666;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 0 10px;
-        `;
-            btn.addEventListener('mouseover', () => {
-                btn.style.color = red;
-            });
-            btn.addEventListener('mouseout', () => {
-                btn.style.color = '#666';
-            });
-        });
-    }
+    }, 0);
 
-    // Get the close button
-    //const closeBtn = document.querySelector('.close');
+    let counter = 0;
+    cursorLoading = setInterval(() => {
+        cursor.style.opacity = counter % 2 === 0 ? '0' : '1';
+        counter++;
+    }, 500);
 }
 
+function hideCursor() {
+    clearInterval(cursorLoading);
+    const cursors = modal.querySelectorAll('.lb-cursor');
+    cursors.forEach(cursor => {
+        cursor.parentNode.removeChild(cursor);
+    });
+}
 
-const insert = (content) => {
+// const insert = (content) => {
 
-    //remove leading and trailing whitespace:
-    content = content.trim();
+//     //remove leading and trailing whitespace:
+//     content = content.trim();
 
-    // Find Calmly editor input section
-    const elements = document.getElementsByClassName('droid');
-    console.log("elements: ", elements);
+//     // Find Calmly editor input section
+//     const elements = shadowRoot.getElementsByClassName('droid');
+//     console.log("elements: ", elements);
 
-    if (elements.length === 0) {
-        return;
-    }
+//     if (elements.length === 0) {
+//         return;
+//     }
 
-    const element = elements[0];
+//     const element = elements[0];
 
-    // Check if there is a selected text
-    const selection = window.getSelection();
-    if (selection.rangeCount === 0) {
-        console.log("I returned early from selection because there was no rangeCount");
-        return;
-    }
+//     // Check if there is a selected text
+//     const selection = window.getSelection();
+//     if (selection.rangeCount === 0) {
+//         console.log("I returned early from selection because there was no rangeCount");
+//         return;
+//     }
 
-    // Replace selected text with new content
-    const range = selection.getRangeAt(0);
-    console.log("before deletion, the range is: ", range);
+//     // Replace selected text with new content
+//     const range = selection.getRangeAt(0);
+//     console.log("before deletion, the range is: ", range);
 
-    //BuildSp used delete Contents, but extractContents is another possibility
-    range.deleteContents();
+//     //BuildSp used delete Contents, but extractContents is another possibility
+//     range.deleteContents();
 
-    //extractContents is another possibility 
-    //const extractedContent = range.extractContents();
+//     //extractContents is another possibility 
+//     //const extractedContent = range.extractContents();
 
-    const textNode = document.createTextNode(content);
-    range.insertNode(textNode);
-
-
-    console.log("after inserting, the range is: ", range);
-    console.log("insert sees textNode as: ", textNode);
-    console.log("textNode is typeof: " + typeof textNode);
-    console.log("insert sees content as: ", content);
-    console.log("content is typeof: " + typeof content);
-
-    // remove the modal after inserting new text:
-    let modal = document.querySelector(".list-modal");
-    modal.style.display = 'none';
-    createModalCloseListener();
-    return true;
-};
+//     const textNode = shadowRoot.createTextNode(content);
+//     range.insertNode(textNode);
 
 
+//     console.log("after inserting, the range is: ", range);
+//     console.log("insert sees textNode as: ", textNode);
+//     console.log("textNode is typeof: " + typeof textNode);
+//     console.log("insert sees content as: ", content);
+//     console.log("content is typeof: " + typeof content);
+
+//     // remove the modal after inserting new text:
+//     let modal = shadowRoot.querySelector(".list-modal");
+//     modal.style.display = 'none';
+//     createModalCloseListener();
+//     return true;
+// };
 
 chrome.runtime.onMessage.addListener(
     (request, sender, sendResponse) => {
@@ -685,20 +653,3 @@ chrome.runtime.onMessage.addListener(
         return true;
     },
 );
-
-
-// create a function to parse lines into li's from baseCompletion message:
-
-//for stream attempt I commented parseList out Feb 4 2023:
-// const parseList = (content) => {
-//     const lines = content.split('\n');
-//     const firstLine = lines.shift();
-//     const lineListItems = (lines) => {
-//         let list = '';
-//         lines.forEach(line => {
-//             list += `<li>${line}</li>`;
-//         });
-//         return list;
-//     };
-//     return { firstLine, lineListItems: lineListItems(lines) };
-// };
