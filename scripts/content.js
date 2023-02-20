@@ -486,7 +486,12 @@ const processModalText = (text) => {
                 headerContainer.innerHTML = "";
                 metadataContainer.innerHTML = "";
                 itemsUL.innerHTML = "";
-
+                // Check if "list-title:" is not at the start of the line
+                if (line.indexOf("list-title:") > 0) {
+                    // Update the line by moving "list-title:" to the start and removing anything before it
+                    line = "list-title:" + line.substring(line.indexOf("list-title:") + "list-title:".length);
+                    console.log("list-title was MID-LINE! the line is now: " + line);
+                }
                 //create current list title as an h2
                 let currentListTitleText = line.replace("list-title:", "");
                 let currentListTitle = document.createElement("h2");
