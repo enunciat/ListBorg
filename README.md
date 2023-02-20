@@ -25,6 +25,4 @@ To generate a list using List Borg, simply select any text you want to generate 
 
 ### Contributing
 
-If you find a bug or have a suggestion for a new feature, feel free to create an issue or pull request on the List Borg Github repository.
-
-I'm excited to hear your feedback!
+If you find a bug or have a suggestion for a new feature, feel free to create an issue or pull request on the List Borg Github repository. 
