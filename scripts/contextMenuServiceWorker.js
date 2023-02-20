@@ -88,13 +88,12 @@ const generate = async (prompt) => {
                 break;
             }
             const line = new TextDecoder("utf-8").decode(value);
-            console.log("generate function completionResponse.body iwth getReader: " + line);
+            console.log(line);
             // Check if there is a message from the main thread to cancel the request
             if (cancelled) {
                 console.log('444444444444 cancelled');
                 return;
             }
-            console.log("33 out to call sendMessage using line: " + line + " and messageType: stream");
             sendMessage(line, 'stream');
         }
     } catch (error) {
@@ -110,22 +109,21 @@ let cancelled = false;
 //integrated listener for cancelling and for all modal prompt submissions:
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.message === 'cancel_generate') {
-      // code to cancel the OpenAI request
-      cancelled = true;
-    } else if (request.message === 'send_prompt') {
-        
-      // send the new prompt to the OpenAI API
-      sendMessage(null, 'initModal');
-      const promptModal = request.prompt;
-      generateCompletionAction(promptModal).then(response => {
-        alert("generateCompletionAction was called");
-        // send the response back to the content script
-        sendResponse({ message: 'response_received', response });
-      });
-      return true;
+        // code to cancel the OpenAI request
+        cancelled = true;
+    } else if (request.message === 'submit_form') {
+        // send the new prompt to the OpenAI API
+        sendMessage(null, 'initModal');
+        const formData = request.formData;
+        console.log("The formData:"+formData);
+        generateCompletionAction(formData).then(response => {
+            // send the response back to the content script
+            sendResponse({ success: true });
+        });
+        return true;
     }
-  });
-  
+});
+
 
 
 //toggle Dummy mode:
@@ -133,17 +131,13 @@ let isDummyMode = false;
 
 const generateCompletionAction = async (info) => {
     try {
-
-        // Send mesage with generating text (this will be like a loading indicator)
-        //sendMessage('<...generating ListBorg for ' + info.selectionText + '...>');
-
-        let { selectionText } = info;
+        let selectionText = info.selectionText ? info.selectionText + " list-details:on quantity:3" : info;
         console.log("#2: my selectionText is: " + selectionText);
 
-const basePromptPrefix =
-`Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
+        const basePromptPrefix =
+            `Task name: Generate a list that would accurately contain this item. Task Instructions: For the item requested provided, generate a real, accurate, and complete list that would really include that item. The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include that item as one of its members. The request may optionally also include list metadata parameters like "details", "quantity", "order", etc. Create a list of 5-20 items unless specified otherwise. Follow the 2 examples provided below. As you generate your list title, check to make sure it would really include the requested item as one of its members, and if not, choose another list title. As you generate each list item (<li>'s), check it for accuracy to make sure it really belongs in the list, and if it doesn't, replace it with an item that does. Include no other HTML tags than those shown below.
 
-Generate a list that would accurately contain this item: the godfather list-details: true
+Generate a list that would accurately contain this item: the godfather list-details:on
 list-title:AFI's 100 Years...100 Movies
 item-1:Citizen Kane
 item-2:Casablanca
@@ -161,7 +155,7 @@ list-category:film
 list-type:evaluative
 list-notes:This is the first 10 of the AFI's 100 years...100 movies list.
 list-sources:https://en.wikipedia.org/wiki/AFI%27s_100_Years...100_Movies
-list-details:true
+list-details:on
 details-item-1:1941, directed by Orson Welles, produced by RKO Radio Pictures
 details-item-2:1942, directed by Michael Curtiz, produced by Warner Bros. Pictures
 details-item-3:1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions
@@ -173,7 +167,7 @@ details-item-8:1954, directed by Elia Kazan, produced by Horizon-American Pictur
 details-item-9:1993, directed by Steven Spielberg, produced by Amblin Entertainment
 details-item-10:1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer
 
-Generate a list that would accurately contain this item: Azerbaijan list-order:alphabetical
+Generate a list that would accurately contain this item: Azerbaijan list-details:off list-order:alphabetical
 list-title:Wikipedia List of Landlocked Countries
 item-1:Afghanistan
 item-2:Andorra
@@ -188,7 +182,7 @@ list-category:geography
 list-type:encyclopedic
 list-notes:This is a list of landlocked countries on Wikipedia
 list-sources:https://en.wikipedia.org/wiki/List_of_landlocked_countries
-list-details:false
+list-details:off
 
 Generate a list that would accurately contain this item: ${selectionText}
 `;
@@ -264,7 +258,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === 'context-main') {
         //initModal is just to create a modal window to show the user a list is loading
         cancelled = false;
-        sendMessage(null, 'initModal');
+        sendMessage(info.selectionText, 'initModal');
         generateCompletionAction(info);
         //console.log("Context menu click listener sees this selection text: " + info.selectionText);
     }

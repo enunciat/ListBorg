@@ -1,7 +1,8 @@
 let modal = null;
 let modalContent = null;
 let headerContainer = null;
-let buttonsContainer = null;
+let metadataContainer = null;
+let footerContainer = null;
 let closeBtn = null;
 let modalRect = null;
 let storedPositionModal;
@@ -11,9 +12,16 @@ let processorTextBuffer = '';
 let asSidebar = false;
 //cursor for when list is loading:
 let cursorLoading = null;
+let modalBuffer = "";
+let ULContainer;
+let itemsUL;
+let submitButton;
+let selection;
+let range;
+
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
-const createModal = () => {
+const createModal = (selectedText = '') => {
     if (modal) {
         modal.parentNode.removeChild(modal);
     }
@@ -28,11 +36,26 @@ const createModal = () => {
     modal.id = "lb-modal-id";
     modal.innerHTML = `
         <div class="lb-modal-close" id="lb-modal-close-id"></div>
-        <div class="lb-modal-content" id="lb-modal-content-id">
-            <div class="lb-header-container" id="lb-header-container-id"></div>
-            <div class="lb-buttons-container"" id="lb-buttons-container-id"></div>
-        </div>
+            <div class="lb-modal-content" id="lb-modal-content-id">
+                <div class="lb-header-container" id="lb-header-container-id"></div>
+                <div class="lb-metadata-container"" id="lb-metadata-container-id"></div>
+                <div class="lb-UL-container" id="lb-UL-container-id"><ul class="lb-itemsUL" id="lb-itemsUL-id"></ul></div>
+                <div class="lb-footer-container"" id="lb-footer-container-id"></div>
+            </div>
     `;
+
+    modalContent = modal.querySelector('.lb-modal-content');
+    headerContainer = modalContent.querySelector('.lb-header-container');
+    metadataContainer = modalContent.querySelector('.lb-metadata-container');
+    footerContainer = modalContent.querySelector('.lb-footer-container');
+    closeBtn = modal.querySelector('.lb-modal-close');
+    ULContainer = modal.querySelector('.lb-UL-container');
+    itemsUL = modal.querySelector('.lb-itemsUL');
+    submitButton = document.createElement("button");
+    submitButton.innerHTML = "Refresh List";
+    submitButton.id = "lb-submit-button-id";
+    submitButton.classList.add("lb-submit-button");
+    footerContainer.appendChild(submitButton);
 
     ////////////////////////////////////// STYLES //////////////////////////////////////
 
@@ -45,9 +68,9 @@ const createModal = () => {
         border: 0;
         font-size: 100%;
         font: inherit;
-        font-family: Arial, sans-serif;
-        vertical-align: baseline;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;        vertical-align: baseline;
         }
+
 
     /* my styles: */
     #lb-modal-id.lb-modal {
@@ -66,7 +89,7 @@ const createModal = () => {
         padding: 20px;
         z-index: 2147483645;
         color: #fff;
-        font-family: Arial, sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         transition: all 0.2s ease-out;
     }
     
@@ -75,6 +98,7 @@ const createModal = () => {
         overflow: auto;
         /* limits the height of the modal-content */
         max-height: 80vh;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
     }
     
     #lb-modal-id .lb-cursor {
@@ -97,11 +121,18 @@ const createModal = () => {
         border-radius: 50%;
         cursor: pointer;
         display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 12px;
         z-index: 2147483646;
         border: 1px solid linear-gradient(to bottom right, #DA7E00, #F46D00);
+    }
+
+    #lb-modal-id #lb-modal-close-id.lb-modal-close:before {
+        content: "\u00D7";
+        position: absolute;
+        top: 45%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 1.1em;
+        font-family: Lucida Sans Unicode;
     }
     
     #lb-modal-id .lb-header-container {
@@ -118,20 +149,12 @@ const createModal = () => {
         /* center text */
         text-align: center;
         margin: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
     
     }
-    
-    #lb-modal-id .lb-next-button,
-    #lb-modal-id .lb-prev-button {
-        width: 10%;
-        text-align: center;
-    }
-    
-    #lb-modal-id .lb-prev-button {
-        margin-right: 10px;
-    }
-    #lb-modal-id .lb-next-button {
-        margin-left: 10px;
+
+    #lb-modal-id #lb-UL-container-id.lb-UL-container {
+        padding: 15px 0px;
     }
 
     #lb-modal-content-id ul.lb-items-ul {
@@ -143,21 +166,20 @@ const createModal = () => {
         display: block;
         text-decoration: none !important;
         color: lightgrey !important;
-        font-family: Arial, sans-serif !important;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         list-style: none !important;
 
     }
     
     #lb-modal-id span.lb-item-details {
+        display: inline;
         margin: 0px;
         padding: 0px;
+        padding-left: 0.5em;
         font-size: smaller;
         color: gray;
-        display: inline;
-        padding-left: 0.5em;
-        padding-right: 0.5em;
         background-color: #333 !important;
-        font-family: Arial, sans-serif !important;
+        
     }
     
     #lb-modal-id span.lb-item-details:before {
@@ -184,15 +206,59 @@ const createModal = () => {
         padding: 0px !important;
         list-style: none !important;
         content: '' !important;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
+    }
+
+    #lb-modal-id #lb-footer-container-id.lb-footer-container {
+        display: flex;
+        justify-content: space-between;
+      }
+    
+    /* /////////////////////////////buttons and inputs///////////////////////////// */
+    
+    #lb-modal-id .lb-next-button,
+    #lb-modal-id .lb-prev-button {
+        width: 10%;
+        text-align: center;
     }
     
-    /* /////////////////////////////buttons///////////////////////////// */
-    
-    
+    #lb-modal-id .lb-prev-button {
+        margin-right: 10px;
+    }
+    #lb-modal-id .lb-next-button {
+        margin-left: 10px;
+    }
+
     #lb-modal-id .lb-quantity {
         width: 30px;
-      }
     }
+
+    #lb-submit-button-id.lb-submit-button {
+        display: none;
+        background-color: #696969;
+        border: 1px solid;
+        border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
+        border-image-slice: 1;
+        border-radius: 0;
+        color: #fff;
+        font-size: 14px;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
+        padding: 10px 10px;
+        cursor: pointer;
+        text-align: center;
+        
+    }
+    
+    #lb-modal-id #lb-submit-button-id.lb-submit-button:hover {
+        background-color: #f69d3c;
+    }
+
+    #lb-submit-button-id.lb-submit-button.inactive {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      
+    
   `;
     document.head.appendChild(style);
     ////////////////////////////////////// END STYLES //////////////////////////////////////
@@ -200,8 +266,30 @@ const createModal = () => {
     showCursor(modalContent);
 
     //Text selection and setting up positioning of modal and arrow:
-    let selection = window.getSelection();
-    let range = selection.getRangeAt(0);
+    //if createModal is being passed a selectedText, find the selected text in the window.
+    if (selectedText) {
+        selection = window.getSelection();
+        range = selection.getRangeAt(0);
+        console.log("My selection is: " + selection);
+    } else {
+        console.log("No selectedText passed to createModal, my selection's still: " + selection);
+    }
+    let selectedItem = document.getElementById("selectedItem");
+    // set up selectedItem, not using window.getSelection but geting it from service worker
+    if (!selectedItem) {
+        selectedItem = document.createElement("input");
+        selectedItem.type = "hidden";
+        selectedItem.id = "selectedItem";
+        metadataContainer.appendChild(selectedItem);
+    }
+    if (selectedText) {
+        selectedItem.value = selectedText;
+    }
+    console.log("My selectedText is: " + selectedText);
+    console.log("My selectedItem.value is: " + selectedItem.value);
+
+    //positioning of modal
+
     let rect = range.getBoundingClientRect();
     let vw = Math.round(rect.left / window.innerWidth * 100);
     let vh = Math.round(rect.top / window.innerHeight * 100);
@@ -262,19 +350,7 @@ const createModal = () => {
     storedPositionModal = positionModal;
     storedPositionModal();
 
-
-    modalContent = modal.querySelector('.lb-modal-content');
-    // if(modalContent === null) {
-    //     alert("The modalContent was NOT found in the shadow root.");
-    // } else {
-    //     alert("modalContent was found!");
-    // }
-    headerContainer = modalContent.querySelector('.lb-header-container');
-    buttonsContainer = modalContent.querySelector('.lb-buttons-container');
-    closeBtn = modal.querySelector('.lb-modal-close');
-
-
-    closeBtn.innerHTML = "&times;";
+    //closeBtn.innerHTML = "&times;";
 
     modalCloseListener = (event) => {
         if (event.target.classList.contains('lb-modal-close') ||
@@ -294,14 +370,54 @@ const createModal = () => {
     ///////////positioning of modal:
     modalRect = modal.getBoundingClientRect();
 
+    ////////////////////////////////// SUBMIT BUTTON /////////////////////////////////////////////
+    // //set up to check which metadata values have been changed by user
+    // let inputs = metadataContainer.querySelectorAll("input, select");
+    // inputs.forEach(input => {
+    //     if (input.id !== "selectedItem") {
+    //         if (input.type === "checkbox") {
+    //             input.defaultValue = input.checked;
+    //         } else {
+    //             input.defaultValue = input.value;
+    //         }
+    //     }
+    // });
+    
+    submitButton.addEventListener("click", function () {
+        console.log("//////// Submit Button Clicked");
+        let data = selectedItem.value + " ";
+        console.log("my data with only selectedItem.value is:" + data);
+        let inputs = metadataContainer.querySelectorAll("input, select");
+        inputs.forEach(input => {
+            if (input.id !== "selectedItem") {
+                let name = input.id.replace("lb-", "list-");
+                let defaultValue = input.defaultValue;
+                let value;
+                if (input.type === "checkbox") {
+                    value = input.checked ? "on" : "off";
+                } else {
+                    value = input.value;
+                }
+                if (value !== defaultValue) {
+                    data += `${name}:${value} `;
+                }
+            }
+        });
+        console.log("my form data is:" + data);
+        chrome.runtime.sendMessage({ message: 'submit_form', formData: data });
+    });
+    
+    
+
+    ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
 
 };
 ///////////////////////////////////////////// END CREATE MODAL /////////////////////////////////////////////
 
 
-///////////////////////////////////////////STREAM VERSION: UPDATE MODAL /////////////////////////////////////////////
-const updateModalStream = (streamData) => {
-    console.log("updateModalStream called with streamData: " + streamData);
+///////////////////////////////////////////STREAM DATA /////////////////////////////////////////////
+const processStreamData = (streamData) => {
+    console.log("processStreamData called with streamData: " + streamData);
     updateTextBuffer += streamData;
 
     // this streamData sometimes has multiple events (chunks) in one message, so we need to handle this properly
@@ -314,7 +430,8 @@ const updateModalStream = (streamData) => {
         }
         //the last one is just [DONE]
         if (chunk.trim() == "[DONE]") {
-            //console.log("data: [DONE] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            console.log("data: [DONE] !!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            hideCursor();
             updateDone();
             return;
         }
@@ -333,8 +450,8 @@ const updateModalStream = (streamData) => {
             // Extract the "text" value
             let lineText = data.choices[0].text;
 
-            // Call the updateModalProcessor function and pass the text to it
-            updateModalProcessor(lineText);
+            // Call the processModalText function and pass the text to it
+            processModalText(lineText);
             processorTextBuffer += lineText;
 
             //modal positioning
@@ -344,11 +461,11 @@ const updateModalStream = (streamData) => {
         }
     });
 };
+///////////////////////////////////////////END STREAM DATA /////////////////////////////////////////////
 
-///////////////////////////////////////////TEXT PROCESSOR /////////////////////////////////////////////
-let modalBuffer = "";
-let itemsUL;
-const updateModalProcessor = (text) => {
+/////////////////////////////////////////// PROCESS MODAL TEXT /////////////////////////////////////////////
+//this function adds html one line at a time to the modal's <form>
+const processModalText = (text) => {
     if (!modal) {
         console.error("The modal element was not found.");
     }
@@ -358,6 +475,7 @@ const updateModalProcessor = (text) => {
         modalBuffer = lines.pop();
         lines.forEach((line) => {
             if (line.startsWith("list-title:")) {
+                console.log("modalContent innerHTML is: " + modalContent.innerHTML);
                 //create current list title as an h2
                 let currentListTitleText = line.replace("list-title:", "");
                 let currentListTitle = document.createElement("h2");
@@ -367,22 +485,15 @@ const updateModalProcessor = (text) => {
                 let prevButton = document.createElement("button");
                 prevButton.innerText = "<";
                 prevButton.classList.add("lb-prev-button");
-                headerContainer.appendChild(prevButton);
+                footerContainer.insertBefore(prevButton, submitButton);
                 headerContainer.appendChild(currentListTitle);
                 showCursor(currentListTitle);
                 let nextButton = document.createElement("button");
                 nextButton.innerText = ">";
                 nextButton.classList.add("lb-next-button");
-                headerContainer.appendChild(nextButton);
+                footerContainer.appendChild(nextButton);
                 showCursor(nextButton);
             } else if (line.startsWith("item-")) {
-                // if no UL with class="items", create one
-                itemsUL = modal.querySelector(".lb-items-ul");
-                if (!itemsUL) {
-                    itemsUL = document.createElement("ul");
-                    itemsUL.classList.add("lb-items-ul");
-                    modalContent.appendChild(itemsUL);
-                }
                 // create list item
                 let itemText = line.replace(/^item-[0-9]+:/, "");
                 let itemLI = document.createElement("li");
@@ -392,73 +503,60 @@ const updateModalProcessor = (text) => {
                 itemsUL.appendChild(itemLI);
                 showCursor(itemLI);
             } else if (line.startsWith("list-")) {
-                // create button for list metadata
                 let metadataText = line.replace(/^list-/, "");
                 let metadata = metadataText.split(":");
                 let metadataType = metadata[0];
                 let metadataValue = metadata[1];
-                if (metadataType === "quantity") {
-                    let quantityInput = document.createElement("input");
-                    quantityInput.type = "number";
-                    quantityInput.value = metadataValue;
-                    quantityInput.classList.add("lb-quantity");
-                    headerContainer.insertBefore(quantityInput, headerContainer.firstChild);
-                } else {
-                    let button = document.createElement("button");
-                    button.innerText = `${metadataType}: ${metadataValue}`;
-                    let buttonClass = "lb-metadata-" + metadataType;
-                    button.classList.add("lb-metadata", buttonClass);
-                    button.dataset[metadataType] = metadataValue;
-                    if (metadataType === "type") {
-                        button.addEventListener("click", () => {
-                            let select = document.createElement("select");
-                            let options = ["encyclopedic", "evaluative", "top-10", "artistic"];
-                            options.forEach((option) => {
-                                let optionElement = document.createElement("option");
-                                optionElement.value = option;
-                                optionElement.text = option;
-                                select.appendChild(optionElement);
-                            });
-                            select.value = metadataValue;
-                            select.addEventListener("change", () => {
-                                button.dataset[metadataType] = select.value;
-                                button.innerText = `${metadataType}: ${select.value}`;
-                                select.remove();
-                            });
-                            button.innerText = "";
-                            button.appendChild(select);
-                            select.focus();
-                        });
-                    } else if (metadataType === "details") {
-                        button.innerText = "Details: On";
-                        button.addEventListener("click", () => {
-                            if (button.innerText === "Details: On") {
-                                button.innerText = "Details: Off";
-                                button.dataset[metadataType] = "off";
-                            } else {
-                                button.innerText = "Details: On";
-                                button.dataset[metadataType] = "on";
+                console.log("quantity metadataType is: " + metadataType);
+                console.log("quantity metadataValue is: " + metadataValue);
+                let input;
+                let label;
+                switch (metadataType) {
+                    case "quantity":
+                        input = document.createElement("input");
+                        input.type = "number";
+                        input.value = metadataValue;
+                        input.defaultValue = metadataValue;
+                        break;
+                    case "type":
+                        input = document.createElement("select");
+                        let options = ["encyclopedic", "evaluative", "top-10", "artistic"];
+                        options.forEach((option) => {
+                            let optionElement = document.createElement("option");
+                            optionElement.value = option;
+                            optionElement.text = option;
+                            input.appendChild(optionElement);
+                            if (option === metadataValue) {
+                                optionElement.selected = true;
+                                input.defaultValue = option;
                             }
                         });
-                    } else {
-                        button.addEventListener("click", () => {
-                            let input = document.createElement("input");
-                            input.value = metadataValue;
-                            input.addEventListener("keydown", (event) => {
-                                if (event.key === "Enter") {
-                                    button.dataset[metadataType] = input.value;
-                                    button.innerText = `${metadataType}: ${input.value}`;
-                                    input.remove();
-                                }
-                            });
-                            button.innerText = "";
-                            button.appendChild(input);
-                            input.focus();
-                        });
-                    }
-                    buttonsContainer.appendChild(button);
+                        break;
+                    case "details":
+                        input = document.createElement("input");
+                        input.type = "checkbox";
+                        input.value = metadataValue;
+                        input.defaultValue = metadataValue;
+                        if (metadataValue === "on") {
+                            input.checked = true;
+                        }
+                        break;
+                    default:
+                        input = document.createElement("input");
+                        input.type = "text";
+                        input.value = metadataValue;
+                        input.defaultValue = metadataValue;
+                        break;
                 }
-                addMetadataButtonListeners();
+
+                input.id = `lb-${metadataType}`;
+                input.classList.add(`lb-${metadataType}`);
+                label = document.createElement("label");
+                label.innerHTML = metadataType;
+                label.htmlFor = input.id;
+
+                metadataContainer.appendChild(input);
+                metadataContainer.appendChild(label);
             }
             else if (line.startsWith("details-")) {
                 // add details to corresponding list item
@@ -475,92 +573,105 @@ const updateModalProcessor = (text) => {
                 }
             } else {
                 showCursor(modalContent);
-                modalContent.innerHTML = modalContent.innerHTML + line + "\n";
-                hideCursor();
+                //modalContent.innerHTML = modalContent.innerHTML + line + "\n";
             }
         });
     }
-    //also added button listener above after each "list-" line
-    addMetadataButtonListeners();
     //modal positioning
     storedPositionModal();
 };
+/////////////////////////////////////////// END PROCESS MODAL TEXT /////////////////////////////////////////////
 
-
-function addMetadataButtonListeners() {
-
-    const metadataButtons = modal.querySelectorAll('.lb-metadata');
-    let selectedText = '';
-    let selectedKey = '';
-    let selectedValue = '';
-
-    metadataButtons.forEach(button => {
-        button.addEventListener('click', (event) => {
-            selectedText = window.getSelection().toString();
-            selectedKey = event.target.dataset.key;
-            selectedValue = event.target.value;
-        });
-
-        button.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                chrome.runtime.sendMessage({
-                    message: 'send_prompt',
-                    prompt: {
-                        selectionText: selectedText,
-                        key: selectedKey,
-                        value: selectedValue
-                    }
-                });
-            }
-        });
-    });
-}
-
-
-
+/////////////////////////////////////////// UPDATE DONE /////////////////////////////////////////////
 const updateDone = () => {
-    let doneText = "\n";
-    updateModalProcessor(doneText);
+    console.log("//////// UpdateDone ran");
     hideCursor();
+    let doneText = "\n";
+    processModalText(doneText);
     console.log("//////// Update Text is //////" + updateTextBuffer);
     console.log(processorTextBuffer);
+    submitButton.style.display = "block";
+
 };
 
 function showCursor(element) {
-    const existingCursor = modal.querySelector('.lb-cursor');
-    if (existingCursor) {
-        existingCursor.remove();
+    let cursor = modal.querySelector('.lb-cursor');
+    if (cursor) {
+        cursor.remove();
     }
-    let cursor = document.createElement("span");
+    cursor = document.createElement("span");
     cursor.classList.add("lb-cursor");
-    modal.appendChild(cursor);
-    //make it the same height as the element:
+
     setTimeout(() => {
         if (!element) {
-            modalContent.appendChild(cursor);
-            cursor.style.height = '20px';
+            if (modalContent) {
+                modalContent.appendChild(cursor);
+                //console.log("modalContent gets cursor");
+                cursor.style.height = '20px';
+            } else {
+                console.log("modalContent is null");
+            }
         } else {
             element.appendChild(cursor);
+            //console.log("element gets cursor" + element);
             cursor.style.top = `${element.offsetTop + (element.offsetHeight - cursor.offsetHeight) / 2}px`;
             cursor.style.left = `${element.offsetLeft + element.offsetWidth + 20}px`;
         }
-
     }, 0);
 
     let counter = 0;
     cursorLoading = setInterval(() => {
         cursor.style.opacity = counter % 2 === 0 ? '0' : '1';
         counter++;
-    }, 500);
+    }, 250);
+
+    setTimeout(hideCursor, 2000);
 }
 
-function hideCursor() {
-    clearInterval(cursorLoading);
-    const cursors = modal.querySelectorAll('.lb-cursor');
-    cursors.forEach(cursor => {
-        cursor.parentNode.removeChild(cursor);
-    });
+let cursors;
+const hideCursor = () => {
+    //console.log("hideCursor ran ////////////////////////");
+    if (cursorLoading !== null && cursorLoading !== undefined) {
+        clearInterval(cursorLoading);
+    }
+    setTimeout(() => {
+        cursors = document.querySelectorAll('.lb-cursor');
+        //console.log("cursors: ", cursors)
+        cursors.forEach(cursor => {
+            cursor.parentNode.removeChild(cursor);
+        });
+        //console.log("timeout hideCursor ran ////////////////////////");
+    }, 0);
 }
+
+
+// function addMetadataButtonListeners() {
+//     const metadataButtons = modal.querySelectorAll('.lb-metadata');
+//     let selectedText = '';
+//     let selectedKey = '';
+//     let selectedValue = '';
+
+//     metadataButtons.forEach(button => {
+//         button.addEventListener('click', (event) => {
+//             selectedText = window.getSelection().toString();
+//             selectedKey = event.target.dataset.key;
+//             selectedValue = event.target.value;
+//         });
+
+//         button.addEventListener("keydown", (event) => {
+//             if (event.key === "Enter") {
+//                 chrome.runtime.sendMessage({
+//                     message: 'send_prompt',
+//                     prompt: {
+//                         selectionText: selectedText,
+//                         key: selectedKey,
+//                         value: selectedValue
+//                     }
+//                 });
+//             }
+//         });
+//     });
+// }
 
 // const insert = (content) => {
 
@@ -614,8 +725,10 @@ function hideCursor() {
 chrome.runtime.onMessage.addListener(
     (request, sender, sendResponse) => {
         console.log("I just received ANY message but haven't received content yet");
-        if (request.message === 'modal') console.log("I just received a MODAL message but haven't received content yet");
         const { content } = request;
+        if (request.message === 'context-main') {
+            content = info.selectionText;
+        }
         switch (request.message) {
             case 'inject':
                 // Call this insert function
@@ -636,17 +749,12 @@ chrome.runtime.onMessage.addListener(
 
             case 'initModal':
                 console.log("initModal message case being handled");
-                createModal();
+                createModal(content);
                 sendResponse({ status: 'success' });
                 break;
-            // case 'modal':
-            //     console.log("MODAL message case being handled");
-            //     updateModal(content);
-            //     sendResponse({ status: 'success' });
-            //     break;
             case 'stream':
                 console.log('STREAM message case being handled');
-                updateModalStream(content);
+                processStreamData(content);
                 sendResponse({ status: 'success' });
                 break;
         }
