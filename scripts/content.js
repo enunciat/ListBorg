@@ -18,7 +18,8 @@ let itemsUL;
 let submitButton;
 let selection;
 let range;
-
+let selectedItem;
+let selectedItemValue;
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
@@ -274,16 +275,22 @@ const createModal = (selectedText = '') => {
     } else {
         console.log("No selectedText passed to createModal, my selection's still: " + selection);
     }
-    let selectedItem = document.getElementById("selectedItem");
+    selectedItem = document.getElementById("selectedItem");
     // set up selectedItem, not using window.getSelection but geting it from service worker
+
     if (!selectedItem) {
         selectedItem = document.createElement("input");
         selectedItem.type = "hidden";
         selectedItem.id = "selectedItem";
         metadataContainer.appendChild(selectedItem);
+        selectedItem.value = selectedItemValue;
+        console.log("SelectedItem was NOT found so a new one was just created: " + selectedItem.value);
+    } else {
+        console.log("selectedItem WAS found, this is the else selectedItem.value: " + selectedItem.value);
     }
     if (selectedText) {
-        selectedItem.value = selectedText;
+        selectedItemValue = selectedText;
+        selectedItem.value = selectedItemValue;
     }
     console.log("My selectedText is: " + selectedText);
     console.log("My selectedItem.value is: " + selectedItem.value);
@@ -382,7 +389,7 @@ const createModal = (selectedText = '') => {
     //         }
     //     }
     // });
-    
+
     submitButton.addEventListener("click", function () {
         console.log("//////// Submit Button Clicked");
         let data = selectedItem.value + " ";
@@ -406,8 +413,8 @@ const createModal = (selectedText = '') => {
         console.log("my form data is:" + data);
         chrome.runtime.sendMessage({ message: 'submit_form', formData: data });
     });
-    
-    
+
+
 
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
 
@@ -475,24 +482,33 @@ const processModalText = (text) => {
         modalBuffer = lines.pop();
         lines.forEach((line) => {
             if (line.startsWith("list-title:")) {
-                console.log("modalContent innerHTML is: " + modalContent.innerHTML);
+                console.log("modalContent innerHTML at list-title is: " + modalContent.innerHTML);
+                headerContainer.innerHTML = "";
+                metadataContainer.innerHTML = "";
+                itemsUL.innerHTML = "";
+
                 //create current list title as an h2
                 let currentListTitleText = line.replace("list-title:", "");
                 let currentListTitle = document.createElement("h2");
                 currentListTitle.innerText = currentListTitleText;
                 currentListTitle.classList.add("lb-current-list-title");
-                // create prev/next buttons
-                let prevButton = document.createElement("button");
-                prevButton.innerText = "<";
-                prevButton.classList.add("lb-prev-button");
-                footerContainer.insertBefore(prevButton, submitButton);
                 headerContainer.appendChild(currentListTitle);
                 showCursor(currentListTitle);
-                let nextButton = document.createElement("button");
-                nextButton.innerText = ">";
-                nextButton.classList.add("lb-next-button");
-                footerContainer.appendChild(nextButton);
-                showCursor(nextButton);
+                // Add previous/next buttons if they don't already exist
+                if (!footerContainer.querySelector(".lb-prev-button")) {
+                    let prevButton = document.createElement("button");
+                    prevButton.innerText = "<";
+                    prevButton.classList.add("lb-prev-button");
+                    footerContainer.insertBefore(prevButton, submitButton);
+                    showCursor(prevButton);
+                }
+                if (!footerContainer.querySelector(".lb-next-button")) {
+                    let nextButton = document.createElement("button");
+                    nextButton.innerText = ">";
+                    nextButton.classList.add("lb-next-button");
+                    footerContainer.appendChild(nextButton);
+                    showCursor(nextButton);
+                }
             } else if (line.startsWith("item-")) {
                 // create list item
                 let itemText = line.replace(/^item-[0-9]+:/, "");
