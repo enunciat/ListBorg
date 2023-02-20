@@ -137,22 +137,20 @@ const createModal = (selectedText = '') => {
     }
     
     #lb-modal-id .lb-header-container {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 5px;
+        margin-bottom: 10px;
     }
     
-    #lb-modal-id h2 {
-        width: 80%;
+    #lb-modal-id h2.lb-current-list-title {
         color: lightgrey;
         font-size: medium;
-        /* center text */
-        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
         margin: 0;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
-    
-    }
+      }
+      
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
         padding: 15px 0px;
