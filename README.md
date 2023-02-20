@@ -8,8 +8,7 @@ List Borg is a Chrome extension that allows you to quickly generate lists. Simpl
 To use List Borg, you will need to first install the extension. Since it is not currently available on the Chrome Web Store, you will need to load it manually.
 
 1. Clone or download the [List Borg repository from Github](https://github.com/enunciat/ListBorg)
-2. Open Google Chrome and navigate to chrome://extensions/:
-image.png
+2. Open Google Chrome and navigate to (chrome://extensions/)
 3. If it's not already, enable Developer mode by toggling the switch in the top right corner of the page.
 4. Click the "Load unpacked" button in the top left corner of the page.
 5. Select the folder containing the List Borg extension you downloaded in step 1.
