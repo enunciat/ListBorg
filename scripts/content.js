@@ -2,6 +2,8 @@ let modal = null;
 let modalContent = null;
 let headerContainer = null;
 let metadataContainer = null;
+let metadataContainerToggle = null;
+let metadataToggleButton = null;
 let footerContainer = null;
 let closeBtn = null;
 let modalRect = null;
@@ -39,8 +41,11 @@ const createModal = (selectedText = '') => {
         <div class="lb-modal-close" id="lb-modal-close-id"></div>
             <div class="lb-modal-content" id="lb-modal-content-id">
                 <div class="lb-header-container" id="lb-header-container-id"></div>
-                <div class="lb-metadata-container"" id="lb-metadata-container-id"></div>
                 <div class="lb-UL-container" id="lb-UL-container-id"><ul class="lb-itemsUL" id="lb-itemsUL-id"></ul></div>
+                <div id="lb-metadata-container-toggle-id" class="lb-metadata-container-toggle">
+                <button class="lb-metadata-toggle-button" id="lb-metadata-toggle-button-id">List Settings</button>
+                <span class="lb-toggle-arrow"></span></div>
+            <div class="lb-metadata-container"" id="lb-metadata-container-id"></div>
                 <div class="lb-footer-container"" id="lb-footer-container-id"></div>
             </div>
     `;
@@ -48,6 +53,7 @@ const createModal = (selectedText = '') => {
     modalContent = modal.querySelector('.lb-modal-content');
     headerContainer = modalContent.querySelector('.lb-header-container');
     metadataContainer = modalContent.querySelector('.lb-metadata-container');
+    metadataContainerToggle = modalContent.querySelector('.lb-metadata-container-toggle');
     footerContainer = modalContent.querySelector('.lb-footer-container');
     closeBtn = modal.querySelector('.lb-modal-close');
     ULContainer = modal.querySelector('.lb-UL-container');
@@ -57,7 +63,16 @@ const createModal = (selectedText = '') => {
     submitButton.id = "lb-submit-button-id";
     submitButton.classList.add("lb-submit-button");
     footerContainer.appendChild(submitButton);
+    const metadataButtonArrow = metadataContainerToggle.querySelector(".lb-toggle-arrow");
+    metadataToggleButton = metadataContainerToggle.querySelector(".lb-metadata-toggle-button");
+    metadataToggleButton.addEventListener("click", () => {
+        console.log("metadataToggleButton clicked");
+        metadataContainer.classList.toggle("hidden");
+        console.log("metadataContainer.classList: " + metadataContainer.classList);
+        metadataButtonArrow.classList.toggle("hidden");
+    });
 
+    //////end listener
     ////////////////////////////////////// STYLES //////////////////////////////////////
 
     const style = document.createElement('style');
@@ -213,7 +228,7 @@ const createModal = (selectedText = '') => {
         justify-content: space-between;
       }
     
-    /* /////////////////////////////buttons and inputs///////////////////////////// */
+                                        /*  BUTTONS  */
     
     #lb-modal-id .lb-next-button,
     #lb-modal-id .lb-prev-button {
@@ -226,10 +241,6 @@ const createModal = (selectedText = '') => {
     }
     #lb-modal-id .lb-next-button {
         margin-left: 10px;
-    }
-
-    #lb-modal-id .lb-quantity {
-        width: 30px;
     }
 
     #lb-submit-button-id.lb-submit-button {
@@ -256,8 +267,181 @@ const createModal = (selectedText = '') => {
         pointer-events: none;
         opacity: 0.5;
       }
+
+    /*  METADATA TOGGLE  */
+
+    #lb-metadata-container-toggle-id.lb-metadata-container-toggle {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+
+      }
       
+      
+      #lb-metadata-toggle-button-id.lb-metadata-toggle-button {
+        background-color: transparent;
+        border: none;
+        color: #ccc;
+        font-size: small;
+        cursor: pointer;
+        line-height: 1.5;
+      }
+      
+      
+      #lb-metadata-toggle-button-id.lb-metadata-toggle-button button:focus {
+        outline: none;
+      }
     
+      #lb-metadata-container-toggle-id span.lb-toggle-arrow {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 4px 0 4px 6px;
+        border-color: transparent transparent transparent #ccc;
+        margin-left: 5px;
+        transform: rotate(90deg);
+        transition: transform 0.2s;
+      }
+
+      #lb-metadata-toggle-button-id.lb-toggle-arrow.hidden {
+        transform: rotate(0deg);
+      }
+      
+      
+
+
+      /*  METADATA  */
+
+      .lb-modal div#lb-metadata-container-id.lb-metadata-container.hidden {
+        display: grid;
+        height: 0;
+        grid-gap: 0;
+        margin: 0;
+        transition: height 0.2s;
+      }
+      
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: auto;
+  grid-gap: 5px;
+  margin: 10px 0;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label {
+  font-size: 12px;
+  color: lightgrey;
+  margin-bottom: 0px;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input,
+.lb-modal div#lb-metadata-container-id.lb-metadata-container select {
+  padding: 5px;
+  border: none;
+  border-radius: 0px;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
+  color: lightgrey;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-quantity"] {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-quantity {
+  grid-row: 2;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-order"] {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-order {
+  grid-row: 2;
+  grid-column: 2;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-category"] {
+  grid-row: 3;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-category {
+  grid-row: 4;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-type"] {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container select#lb-type {
+  grid-row: 4;
+  grid-column: 2;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-notes"] {
+  grid-row: 5;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-notes {
+  grid-row: 6;
+  grid-column: 1;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-sources"] {
+  grid-row: 5;
+  grid-column: 2;
+}
+
+.lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-sources {
+  grid-row: 6;
+  grid-column: 2;
+}
+      
+
+
+      /* CHECKBOX  */
+      
+      .lb-modal #lb-metadata-container-id input[type="checkbox"] {
+        position: relative;
+        width: 36px;
+        height: 18px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-color: #ccc;
+        border-radius: 30px;
+        outline: none;
+        transition: background-color .15s;
+      }
+      
+      .lb-modal #lb-metadata-container-id input[type="checkbox"]::before {
+        position: absolute;
+        content: '';
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        background-color: #fff;
+        transition: transform .15s;
+      }
+      
+      .lb-modal #lb-metadata-container-id input[type="checkbox"]:checked {
+        background-color: #4CAF50;
+      }
+      
+      .lb-modal #lb-metadata-container-id input[type="checkbox"]:checked::before {
+        transform: translateX(16px);
+      }
+      
   `;
     document.head.appendChild(style);
     ////////////////////////////////////// END STYLES //////////////////////////////////////
@@ -411,11 +595,7 @@ const createModal = (selectedText = '') => {
         console.log("my form data is:" + data);
         chrome.runtime.sendMessage({ message: 'submit_form', formData: data });
     });
-
-
-
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
-
 };
 ///////////////////////////////////////////// END CREATE MODAL /////////////////////////////////////////////
 
