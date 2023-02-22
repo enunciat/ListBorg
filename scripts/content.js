@@ -22,6 +22,7 @@ let selection;
 let range;
 let selectedItem;
 let selectedItemValue;
+let detailsButton = null;
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
@@ -71,6 +72,7 @@ const createModal = (selectedText = '') => {
         console.log("metadataContainer.classList: " + metadataContainer.classList);
         metadataButtonArrow.classList.toggle("hidden");
     });
+
 
     //////end listener
     ////////////////////////////////////// STYLES //////////////////////////////////////
@@ -193,28 +195,27 @@ const createModal = (selectedText = '') => {
         font-size: smaller;
         color: gray;
         background-color: #333 !important;
-        
+        transition: display 0.5s, height 1s ease-out;
     }
     
-    #lb-modal-id span.lb-item-details:before {
-        content: ' (';
+    /* #lb-modal-id span.lb-item-details:before {
+        content: ': ';
         list-style: none !important;
         text-decoration: none !important;
         padding: 0px;
-    }
+    } */
     
-    #lb-modal-id span.lb-item-details:after {
-        content: ')';
-        list-style: none !important;
-        text-decoration: none !important;
-        padding: 0px;
+    #lb-modal-id span.lb-item-details.details-hidden {
+        height: 0px;
+        display: none;
     }
+
     
-    #lb-modal-content-id .lb-items-ul li::before {
+    /* #lb-modal-content-id .lb-items-ul li::before {
         content: '' !important;
         padding: 0px !important;
         padding-left: 0px !important;
-      }
+      } */
       
     ul>li {
         padding: 0px !important;
@@ -272,6 +273,7 @@ const createModal = (selectedText = '') => {
 
     #lb-metadata-container-toggle-id.lb-metadata-container-toggle {
         display: flex;
+        justify-content: space-between;
         align-items: center;
         margin-bottom: 10px;
 
@@ -285,6 +287,7 @@ const createModal = (selectedText = '') => {
         font-size: small;
         cursor: pointer;
         line-height: 1.5;
+
       }
       
       
@@ -409,7 +412,7 @@ const createModal = (selectedText = '') => {
 
       /* CHECKBOX  */
       
-      .lb-modal #lb-metadata-container-id input[type="checkbox"] {
+      .lb-modal input#lb-details.lb-details[type="checkbox"] {
         position: relative;
         width: 36px;
         height: 18px;
@@ -422,7 +425,7 @@ const createModal = (selectedText = '') => {
         transition: background-color .15s;
       }
       
-      .lb-modal #lb-metadata-container-id input[type="checkbox"]::before {
+      .lb-modal input#lb-details.lb-details[type="checkbox"]::before {
         position: absolute;
         content: '';
         width: 14px;
@@ -434,11 +437,11 @@ const createModal = (selectedText = '') => {
         transition: transform .15s;
       }
       
-      .lb-modal #lb-metadata-container-id input[type="checkbox"]:checked {
+      .lb-modal input#lb-details.lb-details[type="checkbox"]:checked {
         background-color: #4CAF50;
       }
       
-      .lb-modal #lb-metadata-container-id input[type="checkbox"]:checked::before {
+      .lb-modal input#lb-details.lb-details[type="checkbox"]:checked::before {
         transform: translateX(16px);
       }
       
@@ -596,6 +599,61 @@ const createModal = (selectedText = '') => {
         chrome.runtime.sendMessage({ message: 'submit_form', formData: data });
     });
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
+
+
+
+    let updatedRect = rect;
+    let rectBox = null;
+
+
+
+    function createRectBoxElement() {
+        rectBox = document.createElement('div');
+        rectBox.style.position = 'absolute';
+        rectBox.style.border = '2px solid blue';
+        rectBox.style.zIndex = '99999';
+        document.body.appendChild(rectBox);
+    }
+
+    function updateRectBoxPosition() {
+        if (!updatedRect || !rectBox) {
+            return;
+        }
+
+        const myTop = updatedRect.top + window.scrollY;
+        const myLeft = updatedRect.left + window.scrollX;
+
+        rectBox.style.top = myTop + 'px';
+        rectBox.style.left = myLeft + 'px';
+        rectBox.style.width = updatedRect.width + 'px';
+        rectBox.style.height = updatedRect.height + 'px';
+    }
+
+    function updateRectBox() {
+        updatedRect = window.getSelection().getRangeAt(0).getBoundingClientRect();
+        updateRectBoxPosition();
+    }
+
+    window.addEventListener('resize', updateRectBoxPosition);
+    window.addEventListener('scroll', updateRectBoxPosition);
+    document.addEventListener('mouseup', updateRectBox);
+    document.addEventListener('scroll', updateRectBox);
+
+    window.addEventListener('load', () => {
+        createRectBoxElement();
+        updateRectBox();
+    });
+
+
+
+    createRectBoxElement();
+    updateRectBox();
+
+
+
+
+
+
 };
 ///////////////////////////////////////////// END CREATE MODAL /////////////////////////////////////////////
 
@@ -660,6 +718,7 @@ const processModalText = (text) => {
         modalBuffer = lines.pop();
         lines.forEach((line) => {
             if (line.startsWith("list-title:")) {
+
                 console.log("modalContent innerHTML at list-title is: " + modalContent.innerHTML);
                 headerContainer.innerHTML = "";
                 metadataContainer.innerHTML = "";
@@ -716,6 +775,13 @@ const processModalText = (text) => {
                         input.type = "number";
                         input.value = metadataValue;
                         input.defaultValue = metadataValue;
+                        input.id = `lb-${metadataType}`;
+                        input.classList.add(`lb-${metadataType}`);
+                        label = document.createElement("label");
+                        label.innerHTML = metadataType;
+                        label.htmlFor = input.id;
+                        metadataContainer.appendChild(input);
+                        metadataContainer.appendChild(label);
                         break;
                     case "type":
                         input = document.createElement("select");
@@ -729,15 +795,39 @@ const processModalText = (text) => {
                                 optionElement.selected = true;
                                 input.defaultValue = option;
                             }
+                            input.id = `lb-${metadataType}`;
+                            input.classList.add(`lb-${metadataType}`);
+                            label = document.createElement("label");
+                            label.innerHTML = metadataType;
+                            label.htmlFor = input.id;
+                            metadataContainer.appendChild(input);
+                            metadataContainer.appendChild(label);
                         });
                         break;
                     case "details":
-                        input = document.createElement("input");
-                        input.type = "checkbox";
-                        input.value = metadataValue;
-                        input.defaultValue = metadataValue;
+                        detailsButton = metadataContainerToggle.querySelector('input.lb-details');
+                        if (!detailsButton) {
+                            input = document.createElement("input");
+                            input.type = "checkbox";
+                            input.value = metadataValue;
+                            input.defaultValue = metadataValue;
+                            if (metadataValue === "on") {
+                                input.checked = true;
+                            }
+                            input.id = `lb-${metadataType}`;
+                            input.classList.add(`lb-${metadataType}`);
+                            label = document.createElement("label");
+                            label.innerHTML = metadataType;
+                            label.htmlFor = input.id;
+                            metadataContainerToggle.appendChild(label);
+                            metadataContainerToggle.appendChild(input);
+                            detailsButton = metadataContainerToggle.querySelector('.lb-details');
+                        }
+
                         if (metadataValue === "on") {
-                            input.checked = true;
+                            detailsButton.checked = true;
+                        } else {
+                            detailsButton.checked = false;
                         }
                         break;
                     default:
@@ -745,17 +835,15 @@ const processModalText = (text) => {
                         input.type = "text";
                         input.value = metadataValue;
                         input.defaultValue = metadataValue;
+                        input.id = `lb-${metadataType}`;
+                        input.classList.add(`lb-${metadataType}`);
+                        label = document.createElement("label");
+                        label.innerHTML = metadataType;
+                        label.htmlFor = input.id;
+                        metadataContainer.appendChild(input);
+                        metadataContainer.appendChild(label);
                         break;
                 }
-
-                input.id = `lb-${metadataType}`;
-                input.classList.add(`lb-${metadataType}`);
-                label = document.createElement("label");
-                label.innerHTML = metadataType;
-                label.htmlFor = input.id;
-
-                metadataContainer.appendChild(input);
-                metadataContainer.appendChild(label);
             }
             else if (line.startsWith("details-")) {
                 // add details to corresponding list item
@@ -790,6 +878,17 @@ const updateDone = () => {
     console.log("//////// Update Text is //////" + updateTextBuffer);
     console.log(processorTextBuffer);
     submitButton.style.display = "block";
+
+    if (detailsButton) {
+        let detailsSpans = document.querySelectorAll('.lb-item-details');
+        detailsButton.addEventListener('click', function () {
+            
+            detailsSpans.forEach(function (detail) {
+                console.log("detailsSpans is being toggled : " + detail);
+                detail.classList.toggle('details-hidden');
+            });
+        });
+    }
 
 };
 
