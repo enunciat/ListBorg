@@ -113,7 +113,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         cancelled = true;
     } else if (request.message === 'submit_form') {
         // send the new prompt to the OpenAI API
-        //sendMessage(null, 'initModal');
+        sendMessage(null, 'initModal');
         const formData = request.formData;
         console.log("The formData:"+formData);
         generateCompletionAction(formData).then(response => {

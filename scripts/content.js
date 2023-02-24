@@ -23,6 +23,7 @@ let range;
 let selectedItem;
 let selectedItemValue;
 let detailsButton = null;
+let screenshotButton = null;
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
@@ -62,8 +63,6 @@ const createModal = (selectedText = '') => {
     footerContainer.appendChild(submitButton);
 
     //create metadata container toggle functionality
-
-
     metadataContainerToggle = document.getElementById("lb-metadata-container-toggle-id");
     metadataToggleButton = document.getElementById("lb-metadata-toggle-button-id");
 
@@ -89,16 +88,65 @@ const createModal = (selectedText = '') => {
     metadataToggleButton.addEventListener("click", () => {
         console.log("metadataToggleButton clicked");
         metadataContainer.classList.toggle("hidden");
-        metadataToggleButton.classList.toggle("toggled"); 
+        metadataToggleButton.classList.toggle("toggled");
         console.log("metadataContainer.classList: " + metadataContainer.classList);
     });
-
-
-
-
     //end metadata container toggle functionality
 
-    //////end listener
+    //// CREATE SCREENSHOT BUTTON ///////////   
+    screenshotButton = document.getElementById("lb-screenshot-button-id");
+
+    // create a button element
+    if (!screenshotButton) {
+        screenshotButton = document.createElement('button');
+        screenshotButton.id = "lb-screenshot-button-id";
+        screenshotButton.classList.add("lb-screenshot-button");
+        screenshotButton.textContent = 'Take Screenshot';
+    };
+
+    // add click event listener to the button to capture a PNG snapshot
+    screenshotButton.addEventListener('click', () => {
+        //add screenshot class to change styles just for screen capture
+        modalContent.classList.add('screenshot');
+        // create a canvas element with the same size as the modal content
+        html2canvas(modalContent, {
+            backgroundColor: '#f5f5f5',
+            scale: 2,
+            removeContainer: true,
+            ignoreElements: element => {
+                // Return true if the element has the "modal-header" class
+                return element.classList.contains('modal-header') ||
+                    element.classList.contains('lb-screenshot-button') ||
+                    element.classList.contains('lb-metadata-container-toggle') ||
+                    element.classList.contains('lb-metadata-container') ||
+                    element.classList.contains('lb-footer-container');
+            }
+        }).then(canvas => {
+            // remove "screenshot" class
+            modalContent.classList.remove('screenshot');
+            
+            // Convert the canvas to a data URL in PNG format
+            const dataUrl = canvas.toDataURL('image/png');
+
+            // Create a link element to download the image
+            const link = document.createElement('a');
+            link.download = 'List Borg.png';
+            link.href = dataUrl;
+
+            // Add the link to the document and click it to trigger the download
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up the link element
+            document.body.removeChild(link);
+        });
+    });
+    // append the button to the modal content
+    modalContent.insertBefore(screenshotButton, modalContent.firstChild);
+
+    //////////// END SCREENSHOT BUTTON
+
+
     ////////////////////////////////////// STYLES //////////////////////////////////////
 
     const style = document.createElement('style');
@@ -113,6 +161,33 @@ const createModal = (selectedText = '') => {
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;        vertical-align: baseline;
         }
 
+        /*        SCREEENSHOT STYLES      */
+
+        div#lb-modal-content-id.lb-modal-content.screenshot h2.lb-current-list-title {
+            display: flex;
+            justify-content: center !important;
+            align-items: center !important;
+            color: black !important;
+            padding: 20px 10px 0px 10px !important;
+            font-weight: bold;
+            font-size: 20px;
+          }
+    
+          div#lb-modal-content-id.screenshot .lb-item-li {
+            color: black;
+            //bold:
+            font-weight: bold;
+            margin-left: 20px;
+        }
+
+        div#lb-modal-content-id.lb-modal-content.screenshot span.lb-item-details {
+            display: block;
+            margin: 0px;
+            padding: 0px 5px 15px 5px !important;
+            color: gray;
+          }
+
+        /*        END SCREEENSHOT STYLES      */
 
     /* my styles: */
     #lb-modal-id.lb-modal {
@@ -194,7 +269,6 @@ const createModal = (selectedText = '') => {
         margin: 0;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
       }
-      
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
         padding: 15px 0px;
@@ -208,11 +282,10 @@ const createModal = (selectedText = '') => {
     #lb-modal-id li[class*="item"] {
         display: block;
         text-decoration: none !important;
-        color: lightgrey !important;
+        color: lightgrey;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         list-style: none !important;
     }
-
     
     #lb-modal-id span.lb-item-details {
         display: inline-block;
@@ -221,7 +294,6 @@ const createModal = (selectedText = '') => {
         padding-left: 0.5em;
         font-size: smaller;
         color: gray;
-        background-color: #333 !important;
         max-height: 25px;
       }
 
