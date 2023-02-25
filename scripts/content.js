@@ -93,6 +93,8 @@ const createModal = (selectedText = '') => {
         metadataToggleButton = document.createElement("button");
         metadataToggleButton.innerText = "List Settings";
         metadataToggleButton.classList.add("lb-metadata-toggle-button");
+        metadataContainer.classList.toggle("hidden");
+        metadataToggleButton.classList.add("toggled");
         metadataToggleButton.id = "lb-metadata-toggle-button-id";
     }
 
@@ -107,6 +109,7 @@ const createModal = (selectedText = '') => {
         metadataContainer.classList.toggle("hidden");
         metadataToggleButton.classList.toggle("toggled");
         console.log("metadataContainer.classList: " + metadataContainer.classList);
+        positionModal(); 
     });
     //end metadata container toggle functionality
 
@@ -119,7 +122,7 @@ const createModal = (selectedText = '') => {
         screenshotButton.id = "lb-screenshot-button-id";
         screenshotButton.classList.add("lb-screenshot-button");
         //screenshotButton.textContent = 'Take Screenshot';
-        screenshotButton.setAttribute('title', 'Screenshot this List');
+        screenshotButton.setAttribute('title', 'Screenshot this list');
         screenshotButton.innerHTML = '<img src="' + chrome.runtime.getURL('images/camera_icon.png') + '">';
         screenshotButton.style.display = 'none';
     };
@@ -189,34 +192,28 @@ const createModal = (selectedText = '') => {
         /*        SCREEENSHOT STYLES      */
 
 
-
         button#lb-screenshot-button-id {
             background-color: transparent;
-            position: absolute;
-            display: inline;
+            margin-left: auto;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            padding: 0px;
             border: none;
-            margin-left: auto; /* push the button to the right */
-            transform: scale(0.6); /* scale the button down to half its size */
-            top: 30px;
-            right: 0px;
-
-          }
-
-          button#lb-screenshot-button-id.lb-screenshot-button::after {
-            content: 'Screenshot';
-            display: block;
-            font-size: 20px;
-            position: absolute;
-            bottom: -20px;
-            left: -5px;
+            width: 40px;
+            height: auto;
+            
           }
           
           #lb-screenshot-button-id:hover {
-            background-color: white;
+            background-color: lightgrey;
           }
           
-          #lb-screenshot-button-id img {}
-          transform: scale(0.4); /* scale the button down to half its size */
+          #lb-screenshot-button-id img {
+            margin: 0px;
+            padding: 0px;
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
           }
 
         /* FLASH EFFECT FOR SCREENSHOT */
@@ -272,6 +269,7 @@ const createModal = (selectedText = '') => {
         /*        END SCREEENSHOT STYLES      */
 
     /* my styles: */
+
     #lb-modal-id.lb-modal {
         display: none;
         position: fixed;
@@ -285,7 +283,8 @@ const createModal = (selectedText = '') => {
         border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
         border-image-slice: 1;
         border-radius: 0;
-        padding: 20px;
+        padding: 10px;
+        
         z-index: 2147483645;
         color: #fff;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
@@ -316,7 +315,7 @@ const createModal = (selectedText = '') => {
         width: 25px;
         height: 25px;
         text-align: center;
-        background-color: #955E23;
+        background-color: #BB7329;
         /*border-radius: 50%; */
         cursor: pointer;
         color: lightgrey;
@@ -337,9 +336,13 @@ const createModal = (selectedText = '') => {
         font-family: Lucida Sans Unicode;
     }
     
-    #lb-modal-id .lb-header-container {
-        align-items: center;
-        margin-bottom: 10px;
+    #lb-modal-id div.lb-header-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        margin-top: 20px;
+        min-height: 50px;
     }
     
     #lb-modal-id h2.lb-current-list-title {
@@ -349,12 +352,15 @@ const createModal = (selectedText = '') => {
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-basis: 100%;
         margin: 0;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
       }
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
-        padding: 15px 0px;
+        padding: 0px;
+        
+        padding-bottom: 15px;
     }
 
     #lb-modal-content-id ul.lb-items-ul {
@@ -378,17 +384,11 @@ const createModal = (selectedText = '') => {
         font-size: smaller;
         color: gray;
         max-height: 25px;
-      }
-
-
-      
+      }  
       
       #lb-modal-id span.lb-item-details.details-hidden {
         display: none;
       }
-
-
-
 
     
     /* #lb-modal-content-id .lb-items-ul li::before {
@@ -408,7 +408,6 @@ const createModal = (selectedText = '') => {
         display: flex;
         justify-content: space-between;
       }
-    
                                         /*  BUTTONS  */
     
     #lb-modal-id .lb-next-button,
@@ -467,7 +466,7 @@ const createModal = (selectedText = '') => {
         border-radius: 5px;
         border-color: lightgrey;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); */
-        color: #lightgrey;
+        color: lightgrey;
         cursor: pointer;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         font-size:  small;
@@ -594,8 +593,6 @@ transition: height 0.2s;
   grid-row: 6;
   grid-column: 1 / span 3; /* span 3 columns */
 }
-      
-
 
       /* LIST DETAILS CHECKBOX  */
 
@@ -839,8 +836,6 @@ const processStreamData = (streamData) => {
             processModalText(lineText);
             processorTextBuffer += lineText;
 
-            //modal positioning
-            // storedPositionModal();
         } catch (error) {
             console.error("My Error parsing JSON: " + error);
         }
@@ -1047,7 +1042,7 @@ const updateDone = () => {
             });
         });
     }
-
+    setTimeout(storedPositionModal, 1000);
 };
 
 function showCursor(element) {
