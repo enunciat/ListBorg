@@ -24,7 +24,7 @@ let selectedItem;
 let selectedItemValue;
 let detailsButton = null;
 let screenshotButton = null;
-
+let flashEffect;
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
     if (modal) {
@@ -61,6 +61,23 @@ const createModal = (selectedText = '') => {
     submitButton.id = "lb-submit-button-id";
     submitButton.classList.add("lb-submit-button");
     footerContainer.appendChild(submitButton);
+
+    // Get the parent modal div
+    //modal = document.getElementById('lb-modal-id');
+
+    // Create the flash-effect div
+    flashEffect = document.createElement('div');
+    flashEffect.id = 'flash-effect-id';
+    flashEffect.style.display = 'none';
+    flashEffect.style.backgroundColor = 'white';
+    flashEffect.style.position = 'absolute';
+    flashEffect.style.top = '0';
+    flashEffect.style.left = '0';
+    flashEffect.style.width = '100%';
+    flashEffect.style.height = '100%';
+
+    // Insert the flash-effect div as the first child of the modal div
+    modal.insertBefore(flashEffect, modal.firstChild);
 
     //create metadata container toggle functionality
     metadataContainerToggle = document.getElementById("lb-metadata-container-toggle-id");
@@ -101,17 +118,22 @@ const createModal = (selectedText = '') => {
         screenshotButton = document.createElement('button');
         screenshotButton.id = "lb-screenshot-button-id";
         screenshotButton.classList.add("lb-screenshot-button");
-        screenshotButton.textContent = 'Take Screenshot';
+        //screenshotButton.textContent = 'Take Screenshot';
+        screenshotButton.setAttribute('title', 'Screenshot this List');
+        screenshotButton.innerHTML = '<img src="' + chrome.runtime.getURL('images/camera_icon.png') + '">';
+        screenshotButton.style.display = 'none';
     };
 
     // add click event listener to the button to capture a PNG snapshot
     screenshotButton.addEventListener('click', () => {
+        // display flash-effect div
+        flashEffect.style.display = 'block';
+
         //add screenshot class to change styles just for screen capture
         modalContent.classList.add('screenshot');
         // create a canvas element with the same size as the modal content
         html2canvas(modalContent, {
             backgroundColor: '#f5f5f5',
-            scale: 2,
             removeContainer: true,
             ignoreElements: element => {
                 // Return true if the element has the "modal-header" class
@@ -124,7 +146,7 @@ const createModal = (selectedText = '') => {
         }).then(canvas => {
             // remove "screenshot" class
             modalContent.classList.remove('screenshot');
-            
+
             // Convert the canvas to a data URL in PNG format
             const dataUrl = canvas.toDataURL('image/png');
 
@@ -139,11 +161,9 @@ const createModal = (selectedText = '') => {
 
             // Clean up the link element
             document.body.removeChild(link);
+            flashEffect.style.display = 'none';
         });
     });
-    // append the button to the modal content
-    modalContent.insertBefore(screenshotButton, modalContent.firstChild);
-
     //////////// END SCREENSHOT BUTTON
 
 
@@ -151,6 +171,11 @@ const createModal = (selectedText = '') => {
 
     const style = document.createElement('style');
     style.textContent = `
+    
+    /* blue: #4088A6  */
+    /* mid: #EBF4DB  */
+    /* orange: #F69D3C  */
+
     /* css reset: */
     html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
         margin: 0;
@@ -163,28 +188,85 @@ const createModal = (selectedText = '') => {
 
         /*        SCREEENSHOT STYLES      */
 
+
+
+        button#lb-screenshot-button-id {
+            background-color: transparent;
+            position: absolute;
+            display: inline;
+            border: none;
+            margin-left: auto; /* push the button to the right */
+            transform: scale(0.6); /* scale the button down to half its size */
+            top: 30px;
+            right: 0px;
+
+          }
+
+          button#lb-screenshot-button-id.lb-screenshot-button::after {
+            content: 'Screenshot';
+            display: block;
+            font-size: 20px;
+            position: absolute;
+            bottom: -20px;
+            left: -5px;
+          }
+          
+          #lb-screenshot-button-id:hover {
+            background-color: white;
+          }
+          
+          #lb-screenshot-button-id img {}
+          transform: scale(0.4); /* scale the button down to half its size */
+          }
+
+        /* FLASH EFFECT FOR SCREENSHOT */
+
+        #lb-modal-id > #flash-effect-id {
+
+            z-index: 99999999;
+            background-color: red;
+            opacity: 1;
+            width: 100%;
+            height: 100%;
+          } 
+
+        /* END FLASH EFFECT FOR SCREENSHOT */
+
+
+        div#lb-modal-content-id.lb-modal-content.screenshot {
+            margin: 20px;
+            padding: 0px;
+            background-color: #F4F0F0;
+        }
+
+
         div#lb-modal-content-id.lb-modal-content.screenshot h2.lb-current-list-title {
             display: flex;
-            justify-content: center !important;
-            align-items: center !important;
-            color: black !important;
-            padding: 20px 10px 0px 10px !important;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #333333 !important;
+            margin: 10px;
+            padding: 0px;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 18px;
           }
     
           div#lb-modal-content-id.screenshot .lb-item-li {
-            color: black;
-            //bold:
+            color: #414141;
+            font-size: 12px;
             font-weight: bold;
             margin-left: 20px;
+            padding: 0px;
         }
 
         div#lb-modal-content-id.lb-modal-content.screenshot span.lb-item-details {
             display: block;
-            margin: 0px;
-            padding: 0px 5px 15px 5px !important;
-            color: gray;
+            font-size: 10px;
+            font-weight: normal;
+            margin: 0px 10px 10px 10px;
+            padding: 0px;
+            font-color: #717171;
           }
 
         /*        END SCREEENSHOT STYLES      */
@@ -262,6 +344,7 @@ const createModal = (selectedText = '') => {
     
     #lb-modal-id h2.lb-current-list-title {
         color: lightgrey;
+        text-align: center;
         font-size: medium;
         display: flex;
         justify-content: center;
@@ -375,13 +458,15 @@ const createModal = (selectedText = '') => {
         margin-bottom: 10px;
 
       }
-    #lb-metadata-toggle-button-id.lb-metadata-toggle-button {
+    #lb-metadata-toggle-button-id.lb-metadata-toggle-button
+    {
         background-color: #333333;
-        border: 2px;
+        border: none;
+        /* border: 2px;
         border-style: solid;
         border-radius: 5px;
         border-color: lightgrey;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); */
         color: #lightgrey;
         cursor: pointer;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
@@ -947,6 +1032,10 @@ const updateDone = () => {
     console.log("//////// Update Text is //////" + updateTextBuffer);
     console.log(processorTextBuffer);
     submitButton.style.display = "block";
+
+    // Append and show screenshot button
+    headerContainer.appendChild(screenshotButton);
+    screenshotButton.style.display = 'block';
 
     if (detailsButton) {
         let detailsSpans = document.querySelectorAll('.lb-item-details');

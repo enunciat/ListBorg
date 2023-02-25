@@ -23,6 +23,10 @@
         "matches": ["http://*/*", "https://*/*"],
         "js": ["scripts/content.js", "scripts/lib/html2canvas.js"]
       }
-    ]
+    ],
+    "web_accessible_resources": [{
+      "resources": ["images/camera_icon.png"],
+      "matches": ["<all_urls>"]
+    }]
   }
   
