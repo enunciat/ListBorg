@@ -25,6 +25,11 @@ let selectedItemValue;
 let detailsButton = null;
 let screenshotButton = null;
 let flashEffect;
+let currentListTitleText;
+let currentListTitle;
+//let currentListTitleInput;
+let titleEdited;
+
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
     if (modal) {
@@ -238,15 +243,17 @@ const createModal = (selectedText = '') => {
         /* END FLASH EFFECT FOR SCREENSHOT */
 
 
+
         div#lb-modal-content-id.lb-modal-content.screenshot {
             margin: 20px;
             padding: 0px;
             background-color: #F4F0F0;
+            height: auto !important;
         }
-
-
-        div#lb-modal-content-id.lb-modal-content.screenshot h2.lb-current-list-title {
+        
+        div#lb-modal-content-id.screenshot .lb-header-container h2.lb-current-list-title {
             display: flex;
+            background-color: transparent !important;
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -271,6 +278,7 @@ const createModal = (selectedText = '') => {
             font-weight: normal;
             margin: 0px 10px 10px 10px;
             padding: 0px;
+            max-height: 200px;
             font-color: #717171;
           }
 
@@ -353,22 +361,31 @@ const createModal = (selectedText = '') => {
         min-height: 50px;
     }
     
-    #lb-modal-id h2.lb-current-list-title {
+
+    #lb-modal-id div#lb-header-container-id h2.lb-current-list-title {
         color: lightgrey;
+        background-color: #333333;
         text-align: center;
-        font-size: medium;
+        font-size: large;
         display: flex;
         justify-content: center;
         align-items: center;
         flex-basis: 100%;
-        margin: 0;
+        margin: 0 8px;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
-      }
+
+    }
+
+    #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
+        outline: 2px solid white;
+        border-radius: 20px;
+        padding: 5px;
+    }
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
         padding: 0px;
-        
         padding-bottom: 15px;
+        margin-left: 15px;
     }
 
     #lb-modal-content-id ul.lb-items-ul {
@@ -801,10 +818,15 @@ transition: height 0.2s;
     //     }
     // });
 
+    // create Prompt and submit it (uses some form langauge but not a form)
     submitButton.addEventListener("click", function () {
         console.log("//////// Submit Button Clicked");
-        let data = selectedItem.value + " ";
-        console.log("my data with only selectedItem.value is:" + data);
+        let userPrompt = selectedItem.value + " ";
+        // add list-title if it has been edited
+        if (titleEdited) {
+            userPrompt += "list-title:" + currentListTitle.textContent.trim() + " ";
+        }
+        console.log("my data with only selectedItem.value is:" + userPrompt);
         let inputs = metadataContainer.querySelectorAll("input, select");
         inputs.forEach(input => {
             if (input.id !== "selectedItem") {
@@ -817,12 +839,12 @@ transition: height 0.2s;
                     value = input.value;
                 }
                 if (value !== defaultValue) {
-                    data += `${name}:${value} `;
+                    userPrompt += `${name}:${value} `;
                 }
             }
         });
-        console.log("my form data is:" + data);
-        chrome.runtime.sendMessage({ message: 'submit_form', formData: data });
+        console.log("Prompt form data is:" + userPrompt);
+        chrome.runtime.sendMessage({ message: 'submit_form', formData: userPrompt });
     });
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
 
@@ -899,12 +921,28 @@ const processModalText = (text) => {
                     line = "list-title:" + line.substring(line.indexOf("list-title:") + "list-title:".length);
                     console.log("list-title was MID-LINE! the line is now: " + line);
                 }
-                //create current list title as an h2
-                let currentListTitleText = line.replace("list-title:", "");
-                let currentListTitle = document.createElement("h2");
-                currentListTitle.innerText = currentListTitleText;
+                //create current list title as an h2 and an editable input for prompt/form submission
+                currentListTitleText = line.replace("list-title:", "");
+                currentListTitle = document.createElement("h2");
+                currentListTitle.innerHTML = currentListTitleText;
+                //currentListTitleInput = document.createElement("input");
+                //currentListTitleInput.value = currentListTitleText;
                 currentListTitle.classList.add("lb-current-list-title");
+                //currentListTitleInput.classList.add("lb-current-list-title");
+                currentListTitle.setAttribute("data-original-title", currentListTitleText);
+                //currentListTitleInput.setAttribute("data-original-title", currentListTitleText);
+                //currentListTitle.appendChild(currentListTitleInput);
+                currentListTitle.setAttribute("contenteditable", "true");
                 headerContainer.appendChild(currentListTitle);
+                
+                // set up event listener to track whether title has been edited
+                titleEdited = false;
+                currentListTitle.addEventListener('input', () => {
+                    if (!titleEdited) {
+                        titleEdited = true;
+                    }
+                });
+
                 showCursor(currentListTitle);
 
                 //commented out creation of prev/next buttons
