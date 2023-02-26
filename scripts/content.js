@@ -28,7 +28,63 @@ let flashEffect;
 let currentListTitleText;
 let currentListTitle;
 //let currentListTitleInput;
-let titleEdited;
+let titleEdited = false;
+let itemEdited = false;
+
+
+/////////////////////////////////////////// CREATE LIST ITEM /////////////////////////////////////////////
+console.log("itemsUL 1: " + itemsUL);
+// function for create list items adding li's from either API or from user input:
+function createListItem(itemText = "debug") {
+    itemsUL = modal.querySelector(".lb-itemsUL");
+    console.log("createListItem() sees this itemText: " + itemText);
+    let itemLI = document.createElement("li");
+    let itemSpan = document.createElement("span");
+    itemSpan.classList.add("lb-item-text");
+    itemSpan.contentEditable = true;
+    itemSpan.innerText = itemText + " ";
+    itemLI.appendChild(itemSpan);
+    console.log("itemsUL.children: " + itemsUL.children + " itemsUL.children.length: " + itemsUL.children.length);
+    let itemNum = itemsUL.children.length + 1;
+    itemLI.classList.add("lb-item-li", `item-${itemNum}`);
+
+    let removeButton = document.createElement("button");
+    removeButton.classList.add("lb-remove-item-button");
+    removeButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        itemLI.remove();
+        let items = itemsUL.querySelectorAll('li');
+        //recalculate item numbers
+        for (let i = 0; i < items.length; i++) {
+            let oldClass = items[i].classList[1];
+            items[i].classList.remove(oldClass);
+            items[i].classList.add(`item-${i + 1}`);
+        }
+    });
+    itemLI.appendChild(removeButton);
+
+    // Set up event listener to track whether item has been edited
+    itemEdited = false;
+    itemSpan.addEventListener("input", () => {
+        if (!itemEdited) {
+            itemEdited = true;
+        }
+    });
+    // Check for placeholder text when the new item loses focus
+    itemSpan.addEventListener("blur", () => {
+        if (itemSpan.innerText.trim() === "") {
+            itemLI.remove();
+        } else if (itemEdited) {
+            const details = itemLI.querySelector('.lb-item-details');
+            if (details) {
+                details.innerText = "";
+            }
+        }
+    });
+
+    console.log("createListItem ran: itemLI: " + itemLI + " itemSpan: " + itemSpan);
+    return itemLI;
+}
 
 ///////////////////////////////////////////// CREATE MODAL /////////////////////////////////////////////
 const createModal = (selectedText = '') => {
@@ -60,15 +116,31 @@ const createModal = (selectedText = '') => {
     footerContainer = modalContent.querySelector('.lb-footer-container');
     closeBtn = modal.querySelector('.lb-modal-close');
     ULContainer = modal.querySelector('.lb-UL-container');
-    itemsUL = modal.querySelector('.lb-itemsUL');
+    itemsUL = modalContent.querySelector('.lb-itemsUL');
     submitButton = document.createElement("button");
     submitButton.innerHTML = "Refresh List";
     submitButton.id = "lb-submit-button-id";
     submitButton.classList.add("lb-submit-button");
     footerContainer.appendChild(submitButton);
-
     // Get the parent modal div
     //modal = document.getElementById('lb-modal-id');
+
+
+
+    // create add new item addListItem button:
+    const addItemButton = document.createElement("button");
+    addItemButton.innerText = "Add Item";
+    addItemButton.classList.add("lb-add-item-button");
+    addItemButton.addEventListener("click", () => {
+        itemsUL = document.querySelector(".lb-itemsUL");
+        const newItem = createListItem("");
+        itemsUL.appendChild(newItem);
+        newItem.querySelector(".lb-item-text").focus();
+        newItem.querySelector(".lb-item-text").setAttribute("placeholder", "Add a new item...");
+    });
+
+    ULContainer.appendChild(addItemButton);
+
 
     // Create the flash-effect div
     flashEffect = document.createElement('div');
@@ -149,6 +221,7 @@ const createModal = (selectedText = '') => {
                     element.classList.contains('lb-screenshot-button') ||
                     element.classList.contains('lb-metadata-container-toggle') ||
                     element.classList.contains('lb-metadata-container') ||
+                    element.classList.contains('lb-add-item-button') ||
                     element.classList.contains('lb-footer-container')) {
                     return true;
                 }
@@ -268,7 +341,8 @@ const createModal = (selectedText = '') => {
             color: #414141;
             font-size: 12px;
             font-weight: bold;
-            margin-left: 20px;
+            margin-left: 15px;
+            margin-bottom: 0px !important;
             padding: 0px;
         }
 
@@ -276,11 +350,13 @@ const createModal = (selectedText = '') => {
             display: block;
             font-size: 10px;
             font-weight: normal;
-            margin: 0px 10px 10px 10px;
+            margin: 0px 10px 3px 10px;
             padding: 0px;
             max-height: 200px;
             font-color: #717171;
           }
+
+          
 
         /*        END SCREEENSHOT STYLES      */
 
@@ -374,13 +450,13 @@ const createModal = (selectedText = '') => {
         margin: 0 8px;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         box-sizing: border-box;
-        min-height: 32px;
+        border: 2px solid transparent; /* add a transparent border */
+        padding: 5px;
     }
 
     #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
         outline: 2px solid white;
         border-radius: 20px;
-        padding: 5px;
        
     }
 
@@ -396,49 +472,123 @@ const createModal = (selectedText = '') => {
     }
     
     #lb-modal-id li[class*="item"] {
-        display: block;
+        display: flex;
+        align-items: flex-start;
+        flex-direction: column;
         text-decoration: none !important;
         color: lightgrey;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         list-style: none !important;
+        position: relative;
+        margin-bottom: 5px;
+    }
+
+    #lb-modal-id li.lb-item-li:hover {
+       
+    }
+    
+    #lb-modal-id .lb-item-text {
+        flex: 1;
+        box-sizing: border-box;
+        border: 2px solid transparent; /* add a transparent border */
+        padding: 2px 15px;
+    }
+
+    #lb-modal-id li.lb-item-li:hover .lb-item-text:not(:focus) {
+        outline: 1px solid white;
+        border-radius: 20px;
+
+        padding: 2px 15px;
+    }
+
+    #lb-modal-id li .lb-item-text:focus {
+        outline: 2px solid white;
+        border-radius: 20px;
+
+        padding: 2px 15px;
     }
     
     #lb-modal-id span.lb-item-details {
-        display: inline-block;
-        margin: 0px;
-        padding: 0px;
-        padding-left: 0.5em;
+        margin: 0 20px 0 20px;
         font-size: smaller;
         color: gray;
-        max-height: 25px;
+        max-height: 100px;
       }  
       
       #lb-modal-id span.lb-item-details.details-hidden {
         display: none;
       }
 
-    
-    /* #lb-modal-content-id .lb-items-ul li::before {
-        content: '' !important;
-        padding: 0px !important;
-        padding-left: 0px !important;
-      } */
+   /* remove x "x" button for items */
       
-    ul>li {
-        padding: 0px !important;
-        list-style: none !important;
-        content: '' !important;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
-    }
+        #lb-modal-id button.lb-remove-item-button {
+          display: flex;
+          align-self: center !important;
+          position: absolute;
+          right: -5px;
+          top: 0px;
+          margin-left: 20px;
+          padding: 0.5em;
+          font-size: 20px;
+          line-height: 1;
+          border: none;
+          background: none;
+          color: #c1c1c1;
+          cursor: pointer;
+          opacity: 0;
+          transition: opacity 0.1s ease-in-out;
 
+        } 
+        
+        #lb-modal-id button.lb-remove-item-button::before {
+          content: "\\00D7  ";
+          font-size: 1.2em;
+        }
+  
+        #lb-modal-id .lb-item-li:hover button.lb-remove-item-button {
+          opacity: 1; /* show the button on hover */
+        }
+        
+        /* add items buttons */
+
+        #lb-modal-id button.lb-add-item-button {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            background-color: transparent;
+            border-left: 1px solid lightgrey;
+            border-bottom: 1px solid lightgrey;
+            border-right: 1px solid lightgrey;
+            border-radius: 30px;
+            cursor: pointer;
+            background-color: transparent;
+            color: lightgrey;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
+            border: 1px solid white;
+            border-radius: 20px;
+            padding: 2px 15px;
+            margin-left: 3px;
+        }
+
+        #lb-modal-id button.lb-add-item-button::before {
+            content: "+ ";
+            color: lightgrey;
+            font-size: 1.5em;
+            margin-right: 7px;
+        }
+        #lb-modal-id button.lb-add-item-button:hover{
+            background-color: #4088A6;
+        }
+      
     #lb-modal-id #lb-footer-container-id.lb-footer-container {
-        display: flex;
-        justify-content: center;
-      }
+            display: flex;
+            justify-content: center;
+        }
 
-      #lb-modal-id #lb-footer-container-id.lb-footer-container:only-child {
-        justify-content: center;
-      }
+        #lb-modal-id #lb-footer-container-id.lb-footer-container:only-child {
+            justify-content: center;
+        }
+
                                         /*  BUTTONS  */
     
     #lb-modal-id .lb-next-button,
@@ -488,8 +638,6 @@ const createModal = (selectedText = '') => {
         margin-bottom: 10px;
       }
 
-      
-
     #lb-metadata-toggle-button-id.lb-metadata-toggle-button
     {
         background-color: #333333;
@@ -514,11 +662,6 @@ const createModal = (selectedText = '') => {
         border-radius: 5px 5px 0 0;
 
         }
-
-
-
-
-
         
         #lb-metadata-toggle-button-id.lb-metadata-toggle-button:hover {
         background-color: #4188A6;
@@ -536,8 +679,7 @@ const createModal = (selectedText = '') => {
         #lb-metadata-toggle-button-id.lb-metadata-toggle-button.toggled:after {
         content: "\\25B6";
         }
-    
-              
+
 
       /*  METADATA  */
 
@@ -808,27 +950,32 @@ transition: height 0.2s;
     modalRect = modal.getBoundingClientRect();
 
     ////////////////////////////////// SUBMIT BUTTON /////////////////////////////////////////////
-    // //set up to check which metadata values have been changed by user
-    // let inputs = metadataContainer.querySelectorAll("input, select");
-    // inputs.forEach(input => {
-    //     if (input.id !== "selectedItem") {
-    //         if (input.type === "checkbox") {
-    //             input.defaultValue = input.checked;
-    //         } else {
-    //             input.defaultValue = input.value;
-    //         }
-    //     }
-    // });
-
-    // create Prompt and submit it (uses some form langauge but not a form)
+    //  PROMPT:  create userPrompt and submit it (uses some form langauge but not a form)
     submitButton.addEventListener("click", function () {
-        console.log("//////// Submit Button Clicked");
+
+        console.log("Prompt 1: Submit Button Clicked");
         let userPrompt = selectedItem.value + " ";
+
         // add list-title if it has been edited
         if (titleEdited) {
+            console.log("Prompt 2: if titleEdited ran!");
             userPrompt += "list-title:" + currentListTitle.textContent.trim() + " ";
         }
-        console.log("my data with only selectedItem.value is:" + userPrompt);
+
+        // add all items to userPrompt if any items have been added, removed, or edited
+        // items should be in the plain text format: item-2:Armenia item-5:Austria
+        if (itemEdited) {
+            console.log("Prompt 3: if itemEdited ran!");
+            let allItems = "";
+            itemsUL.querySelectorAll(".lb-item-li .lb-item-text").forEach(item => {
+                if (item.textContent.trim() !== "") {
+                    let itemDashNum = item.parentElement.classList[1];
+                    allItems += `${itemDashNum}:${item.textContent.trim()} `;
+                }
+            });
+            userPrompt += allItems;
+        }
+        // add inputs to userPrompt
         let inputs = metadataContainer.querySelectorAll("input, select");
         inputs.forEach(input => {
             if (input.id !== "selectedItem") {
@@ -842,10 +989,11 @@ transition: height 0.2s;
                 }
                 if (value !== defaultValue) {
                     userPrompt += `${name}:${value} `;
+                    console.log("Prompt 4: inputs were edited ran!");
                 }
             }
         });
-        console.log("Prompt form data is:" + userPrompt);
+        console.log("Prompt 5 FINAL: form data is:" + userPrompt);
         chrome.runtime.sendMessage({ message: 'submit_form', formData: userPrompt });
     });
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
@@ -927,16 +1075,11 @@ const processModalText = (text) => {
                 currentListTitleText = line.replace("list-title:", "");
                 currentListTitle = document.createElement("h2");
                 currentListTitle.innerHTML = currentListTitleText;
-                //currentListTitleInput = document.createElement("input");
-                //currentListTitleInput.value = currentListTitleText;
                 currentListTitle.classList.add("lb-current-list-title");
-                //currentListTitleInput.classList.add("lb-current-list-title");
                 currentListTitle.setAttribute("data-original-title", currentListTitleText);
-                //currentListTitleInput.setAttribute("data-original-title", currentListTitleText);
-                //currentListTitle.appendChild(currentListTitleInput);
                 currentListTitle.setAttribute("contenteditable", "true");
                 headerContainer.appendChild(currentListTitle);
-                
+
                 // set up event listener to track whether title has been edited
                 titleEdited = false;
                 currentListTitle.addEventListener('input', () => {
@@ -964,11 +1107,13 @@ const processModalText = (text) => {
             } else if (line.startsWith("item-")) {
                 // create list item
                 let itemText = line.replace(/^item-[0-9]+:/, "");
-                let itemLI = document.createElement("li");
-                itemLI.innerText = itemText + " ";
-                let itemNum = line.split(":")[0].replace("item-", "");
-                itemLI.classList.add("lb-item-li", "item-" + itemNum);
+                console.log("about to run createlistitem.... itemText is: " + itemText);
+                let itemLI = createListItem(itemText);
+                //let itemNum = line.split(":")[0].replace("item-", "");
+                //itemLI.classList.add("lb-item-li", "item-" + itemNum);
+                console.log("itemLI is: " + itemLI + itemLI.textContent);
                 itemsUL.appendChild(itemLI);
+                console.log("itemsUL is: " + itemsUL);
                 showCursor(itemLI);
             } else if (line.startsWith("list-")) {
                 // Check if there are any child elements in metadataContainer

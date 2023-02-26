@@ -16,7 +16,6 @@ const getKey = () => {
 
 
 const sendMessage = (content, messageType = 'modal') => {
-    console.log("sendMessage before tabs.query");
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs.length === 0) {
             console.log("#1: Error: No active tabs found.");
@@ -40,7 +39,6 @@ const sendMessage = (content, messageType = 'modal') => {
                     if (response.status === 'failed') {
                         console.log('message failed.');
                     } else {
-                        console.log('message sent without status notfailed; type: ' + messageType);
                     }
                 }
             });
@@ -81,6 +79,7 @@ const generate = async (prompt) => {
 
     const stream = completionResponse.body;
     const reader = stream.getReader();
+    let consoleLogLineBuffer = "";
     try {
         while (true) {
             const { done, value } = await reader.read();
@@ -88,13 +87,14 @@ const generate = async (prompt) => {
                 break;
             }
             const line = new TextDecoder("utf-8").decode(value);
-            console.log(line);
+            consoleLogLineBuffer += line;
             // Check if there is a message from the main thread to cancel the request
             if (cancelled) {
                 console.log('444444444444 cancelled');
                 return;
             }
             sendMessage(line, 'stream');
+            
         }
     } catch (error) {
         console.error(error);
