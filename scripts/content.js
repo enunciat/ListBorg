@@ -109,7 +109,7 @@ const createModal = (selectedText = '') => {
         metadataContainer.classList.toggle("hidden");
         metadataToggleButton.classList.toggle("toggled");
         console.log("metadataContainer.classList: " + metadataContainer.classList);
-        positionModal(); 
+        positionModal();
     });
     //end metadata container toggle functionality
 
@@ -140,11 +140,18 @@ const createModal = (selectedText = '') => {
             removeContainer: true,
             ignoreElements: element => {
                 // Return true if the element has the "modal-header" class
-                return element.classList.contains('modal-header') ||
+                if (element.classList.contains('modal-header') ||
                     element.classList.contains('lb-screenshot-button') ||
                     element.classList.contains('lb-metadata-container-toggle') ||
                     element.classList.contains('lb-metadata-container') ||
-                    element.classList.contains('lb-footer-container');
+                    element.classList.contains('lb-footer-container')) {
+                    return true;
+                }
+                // Return true if the element is a span with the class 'details-hidden'
+                if (element.tagName === 'SPAN' && element.classList.contains('details-hidden')) {
+                    return true;
+                }
+                return false;
             }
         }).then(canvas => {
             // remove "screenshot" class
@@ -197,6 +204,7 @@ const createModal = (selectedText = '') => {
             margin-left: auto;
             margin-right: 0px;
             margin-bottom: 0px;
+            margin-top: 8px;
             padding: 0px;
             border: none;
             width: 40px;
@@ -406,7 +414,11 @@ const createModal = (selectedText = '') => {
 
     #lb-modal-id #lb-footer-container-id.lb-footer-container {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
+      }
+
+      #lb-modal-id #lb-footer-container-id.lb-footer-container:only-child {
+        justify-content: center;
       }
                                         /*  BUTTONS  */
     
@@ -452,11 +464,13 @@ const createModal = (selectedText = '') => {
 
     #lb-metadata-container-toggle-id.lb-metadata-container-toggle {
         display: none;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
         margin-bottom: 10px;
-
       }
+
+      
+
     #lb-metadata-toggle-button-id.lb-metadata-toggle-button
     {
         background-color: #333333;
@@ -473,7 +487,19 @@ const createModal = (selectedText = '') => {
         padding: 8px 10px;
         transition: all 0.2s ease;
         content: " "; /* add some content to the button */
+
+        border-top: 1px solid grey;
+        border-left: 1px solid grey;
+        border-right: 1px solid grey;
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+
         }
+
+
+
+
+
         
         #lb-metadata-toggle-button-id.lb-metadata-toggle-button:hover {
         background-color: #4188A6;
@@ -576,20 +602,23 @@ transition: height 0.2s;
 
 .lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-notes"] {
   grid-row: 3;
-  grid-column: 1 / span 3; /* span 3 columns */
+  grid-column: 1 / span 2;
+  height: 10px;
 }
 
 .lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-notes {
   grid-row: 4;
-  grid-column: 1 / span 3; /* span 3 columns */
+  grid-column: 1 / span 2;
 }
 
 .lb-modal div#lb-metadata-container-id.lb-metadata-container label[for="lb-sources"] {
+  display: none; 
   grid-row: 5;
   grid-column: 1 / span 3; /* span 3 columns */
 }
 
 .lb-modal div#lb-metadata-container-id.lb-metadata-container input#lb-sources {
+  display: none;
   grid-row: 6;
   grid-column: 1 / span 3; /* span 3 columns */
 }
@@ -597,6 +626,8 @@ transition: height 0.2s;
       /* LIST DETAILS CHECKBOX  */
 
       label.lb-details-label {
+        grid-area: 3 / 3 / 4 / 4;
+        height: 10px;
         padding: 5px;
         border: none;
         border-radius: 0px;
@@ -606,7 +637,7 @@ transition: height 0.2s;
       }
       
       .lb-modal input#lb-details.lb-details[type="checkbox"] {
-        position: relative;
+        grid-area: 4 / 3 / 5 / 4;
         width: 36px;
         height: 18px;
         -webkit-appearance: none;
@@ -616,6 +647,8 @@ transition: height 0.2s;
         border-radius: 30px;
         outline: none;
         transition: background-color .15s;
+        position: relative;
+        justify-self: center;
       }
       
       .lb-modal input#lb-details.lb-details[type="checkbox"]::before {
@@ -624,8 +657,8 @@ transition: height 0.2s;
         width: 14px;
         height: 14px;
         border-radius: 50%;
-        top: 2px;
-        left: 2px;
+        top: 10%;
+        left: 10%;
         background-color: #fff;
         transition: transform .15s;
       }
@@ -635,7 +668,7 @@ transition: height 0.2s;
       }
       
       .lb-modal input#lb-details.lb-details[type="checkbox"]:checked::before {
-        transform: translateX(16px);
+        transform: translateX(100%);
       }
       
   `;
@@ -873,19 +906,21 @@ const processModalText = (text) => {
                 currentListTitle.classList.add("lb-current-list-title");
                 headerContainer.appendChild(currentListTitle);
                 showCursor(currentListTitle);
+
+                //commented out creation of prev/next buttons
                 // Add previous/next buttons if they don't already exist
-                if (!footerContainer.querySelector(".lb-prev-button")) {
-                    let prevButton = document.createElement("button");
-                    prevButton.innerText = "<";
-                    prevButton.classList.add("lb-prev-button");
-                    footerContainer.insertBefore(prevButton, submitButton);
-                }
-                if (!footerContainer.querySelector(".lb-next-button")) {
-                    let nextButton = document.createElement("button");
-                    nextButton.innerText = ">";
-                    nextButton.classList.add("lb-next-button");
-                    footerContainer.appendChild(nextButton);
-                }
+                // if (!footerContainer.querySelector(".lb-prev-button")) {
+                //     let prevButton = document.createElement("button");
+                //     prevButton.innerText = "<";
+                //     prevButton.classList.add("lb-prev-button");
+                //     footerContainer.insertBefore(prevButton, submitButton);
+                // }
+                // if (!footerContainer.querySelector(".lb-next-button")) {
+                //     let nextButton = document.createElement("button");
+                //     nextButton.innerText = ">";
+                //     nextButton.classList.add("lb-next-button");
+                //     footerContainer.appendChild(nextButton);
+                // }
             } else if (line.startsWith("item-")) {
                 // create list item
                 let itemText = line.replace(/^item-[0-9]+:/, "");
@@ -966,9 +1001,9 @@ const processModalText = (text) => {
                             label.classList.add("lb-details-label");
                             console.log("trying to create a details button");
                             console.log("trying to see metadataContainerToggle: " + metadataContainerToggle);
-                            metadataContainerToggle.appendChild(label);
-                            metadataContainerToggle.appendChild(input);
-                            detailsButton = metadataContainerToggle.querySelector('.lb-details');
+                            metadataContainer.appendChild(label);
+                            metadataContainer.appendChild(input);
+                            detailsButton = metadataContainer.querySelector('.lb-details');
                             console.log("trying succeeded, detailsButton is: " + detailsButton);
                         }
 
