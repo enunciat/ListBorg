@@ -373,13 +373,15 @@ const createModal = (selectedText = '') => {
         flex-basis: 100%;
         margin: 0 8px;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
-
+        box-sizing: border-box;
+        min-height: 32px;
     }
 
     #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
         outline: 2px solid white;
         border-radius: 20px;
         padding: 5px;
+       
     }
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
