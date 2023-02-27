@@ -30,6 +30,7 @@ let currentListTitle;
 //let currentListTitleInput;
 let titleEdited = false;
 let itemEdited = false;
+let addItemButton; 
 
 
 /////////////////////////////////////////// CREATE LIST ITEM /////////////////////////////////////////////
@@ -128,7 +129,7 @@ const createModal = (selectedText = '') => {
 
 
     // create add new item addListItem button:
-    const addItemButton = document.createElement("button");
+    addItemButton = document.createElement("button");
     addItemButton.innerText = "Add Item";
     addItemButton.classList.add("lb-add-item-button");
     addItemButton.addEventListener("click", () => {
@@ -336,12 +337,20 @@ const createModal = (selectedText = '') => {
             font-weight: bold;
             font-size: 18px;
           }
+
+          div#lb-modal-content-id.screenshot #lb-UL-container-id.lb-UL-container {
+            margin-top: 5px;
+        }
     
           div#lb-modal-content-id.screenshot .lb-item-li {
             color: #414141;
             font-size: 12px;
             font-weight: bold;
             margin-left: 15px;
+            margin-bottom: 0px !important;
+            padding: 0px;
+        }
+          div#lb-modal-content-id.screenshot .lb-item-text {
             margin-bottom: 0px !important;
             padding: 0px;
         }
@@ -454,21 +463,27 @@ const createModal = (selectedText = '') => {
         padding: 5px;
     }
 
-    #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
-        outline: 2px solid white;
+    #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:not(:focus):hover {
+        border: 1px solid white;
         border-radius: 20px;
-       
+    }
+    #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
+        border: 2px solid white;
+        border-radius: 20px;
     }
 
     #lb-modal-id #lb-UL-container-id.lb-UL-container {
         padding: 0px;
         padding-bottom: 15px;
         margin-left: 15px;
+        margin-top: -10px;
     }
 
     #lb-modal-content-id ul.lb-items-ul {
         list-style: none !important;
         text-decoration: none !important;
+        background-color: red;
+
     }
     
     #lb-modal-id li[class*="item"] {
@@ -482,34 +497,29 @@ const createModal = (selectedText = '') => {
         position: relative;
         margin-bottom: 5px;
     }
-
-    #lb-modal-id li.lb-item-li:hover {
-       
-    }
     
-    #lb-modal-id .lb-item-text {
+    #lb-modal-id span.lb-item-text {
         flex: 1;
         box-sizing: border-box;
-        border: 2px solid transparent; /* add a transparent border */
-        padding: 2px 15px;
+        margin-bottom: 6px;
+        padding: 0px 4px 0px 4px;
     }
 
     #lb-modal-id li.lb-item-li:hover .lb-item-text:not(:focus) {
-        outline: 1px solid white;
-        border-radius: 20px;
-
-        padding: 2px 15px;
+        outline: 1.5px solid lightgrey;
+        outline-offset: 4px;
+        border-radius: 10px;
     }
 
     #lb-modal-id li .lb-item-text:focus {
         outline: 2px solid white;
-        border-radius: 20px;
+        outline-offset: 4px;
+        border-radius: 10px;
 
-        padding: 2px 15px;
     }
     
     #lb-modal-id span.lb-item-details {
-        margin: 0 20px 0 20px;
+        margin: 0 20px 0 15px;
         font-size: smaller;
         color: gray;
         max-height: 100px;
@@ -525,10 +535,10 @@ const createModal = (selectedText = '') => {
           display: flex;
           align-self: center !important;
           position: absolute;
-          right: -5px;
+          right: 0px;
           top: 0px;
-          margin-left: 20px;
-          padding: 0.5em;
+         
+          padding: 0.5em 0em 0.5em 0.5em;
           font-size: 20px;
           line-height: 1;
           border: none;
@@ -552,7 +562,7 @@ const createModal = (selectedText = '') => {
         /* add items buttons */
 
         #lb-modal-id button.lb-add-item-button {
-            display: flex;
+            display: none;
             align-items: center;
             margin-top: 15px;
             background-color: transparent;
@@ -1242,6 +1252,7 @@ const processModalText = (text) => {
 const updateDone = () => {
     console.log("//////// UpdateDone ran");
     hideCursor();
+    addItemButton.style.display = "flex";
     let doneText = "\n";
     processModalText(doneText);
     console.log("//////// Update Text is //////" + updateTextBuffer);
