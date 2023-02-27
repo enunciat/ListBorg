@@ -34,7 +34,7 @@ let addItemButton;
 
 
 /////////////////////////////////////////// CREATE LIST ITEM /////////////////////////////////////////////
-console.log("itemsUL 1: " + itemsUL);
+
 // function for create list items adding li's from either API or from user input:
 function createListItem(itemText = "debug") {
     itemsUL = modal.querySelector(".lb-itemsUL");
@@ -66,6 +66,8 @@ function createListItem(itemText = "debug") {
 
     // Set up event listener to track whether item has been edited
     itemEdited = false;
+    const originalText = itemSpan.innerText.trim();
+
     itemSpan.addEventListener("input", () => {
         if (!itemEdited) {
             itemEdited = true;
@@ -75,7 +77,7 @@ function createListItem(itemText = "debug") {
     itemSpan.addEventListener("blur", () => {
         if (itemSpan.innerText.trim() === "") {
             itemLI.remove();
-        } else if (itemEdited) {
+        } else if (itemEdited && itemSpan.innerText.trim() !== originalText) {
             const details = itemLI.querySelector('.lb-item-details');
             if (details) {
                 details.innerText = "";
