@@ -61,6 +61,8 @@ function createListItem(itemText = "debug") {
             items[i].classList.remove(oldClass);
             items[i].classList.add(`item-${i + 1}`);
         }
+        // i want to call removing any items as itemEdited = true
+        itemEdited = true;
     });
     itemLI.appendChild(removeButton);
 
@@ -98,6 +100,8 @@ const createModal = (selectedText = '') => {
     //clear console text buffers:
     updateTextBuffer = '';
     processorTextBuffer = '';
+    // list-titleISSUE  ... see in processModalText function for more, kinda messy
+    modalBuffer = 'list-title:';
 
     //create modal div:
     modal = document.createElement("div");
@@ -108,7 +112,7 @@ const createModal = (selectedText = '') => {
             <div class="lb-modal-content" id="lb-modal-content-id">
                 <div class="lb-header-container" id="lb-header-container-id"></div>
                 <div class="lb-UL-container" id="lb-UL-container-id"><ul class="lb-itemsUL" id="lb-itemsUL-id"></ul></div>
-            <div class="lb-metadata-container"" id="lb-metadata-container-id"></div>
+                <div class="lb-metadata-container"" id="lb-metadata-container-id"></div>
                 <div class="lb-footer-container"" id="lb-footer-container-id"></div>
             </div>
     `;
@@ -290,7 +294,7 @@ const createModal = (selectedText = '') => {
             border: none;
             width: 40px;
             height: auto;
-            
+            cursor: pointer;
           }
           
           #lb-screenshot-button-id:hover {
@@ -326,8 +330,12 @@ const createModal = (selectedText = '') => {
             background-color: #F4F0F0;
             height: auto !important;
         }
+
+        div#lb-modal-content-id.screenshot #lb-header-container-id {
+            margin-top: 10px;
+        }
         
-        div#lb-modal-content-id.screenshot .lb-header-container h2.lb-current-list-title {
+        div#lb-modal-content-id.screenshot .lb-header-container .lb-current-list-title {
             display: flex;
             background-color: transparent !important;
             justify-content: center;
@@ -335,9 +343,11 @@ const createModal = (selectedText = '') => {
             text-align: center;
             color: #333333 !important;
             margin: 10px;
+            margin-top: 0px !important;
             padding: 0px;
             font-weight: bold;
             font-size: 18px;
+            
           }
 
           div#lb-modal-content-id.screenshot #lb-UL-container-id.lb-UL-container {
@@ -407,7 +417,7 @@ const createModal = (selectedText = '') => {
         width: 5px;
         height: 14px;
         background-color: #ccc;
-        left: 50px;
+        left: 20px;
         transition: all 0.5s ease-in-out;
     }
     
@@ -466,7 +476,7 @@ const createModal = (selectedText = '') => {
     }
 
     #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:not(:focus):hover {
-        border: 1px solid white;
+        border: 2px solid white;
         border-radius: 20px;
     }
     #lb-modal-id div#lb-header-container-id h2.lb-current-list-title:focus {
@@ -503,12 +513,10 @@ const createModal = (selectedText = '') => {
     #lb-modal-id span.lb-item-text {
         flex: 1;
         box-sizing: border-box;
-        margin-bottom: 6px;
-        padding: 0px 4px 0px 4px;
     }
 
     #lb-modal-id li.lb-item-li:hover .lb-item-text:not(:focus) {
-        outline: 1.5px solid lightgrey;
+        outline: 2px solid lightgrey;
         outline-offset: 4px;
         border-radius: 10px;
     }
@@ -521,7 +529,7 @@ const createModal = (selectedText = '') => {
     }
     
     #lb-modal-id span.lb-item-details {
-        margin: 0 20px 0 15px;
+        margin: 5px 20px 5px 15px;
         font-size: smaller;
         color: gray;
         max-height: 100px;
@@ -576,7 +584,7 @@ const createModal = (selectedText = '') => {
             background-color: transparent;
             color: lightgrey;
             font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
-            border: 1px solid white;
+            border: 2px solid lightgrey;
             border-radius: 20px;
             padding: 2px 15px;
             margin-left: 3px;
@@ -964,14 +972,17 @@ transition: height 0.2s;
     ////////////////////////////////// SUBMIT BUTTON /////////////////////////////////////////////
     //  PROMPT:  create userPrompt and submit it (uses some form langauge but not a form)
     submitButton.addEventListener("click", function () {
-
         console.log("Prompt 1: Submit Button Clicked");
-        let userPrompt = selectedItem.value + " ";
+        let userPrompt = "";
+        let submitType = 'default_list';
+        // add selected item to userPrompt
+        userPrompt += selectedItem.value + " ";
 
-        // add list-title if it has been edited
+        // replace selected item with list-title in userPrompt if it has been edited
         if (titleEdited) {
             console.log("Prompt 2: if titleEdited ran!");
-            userPrompt += "list-title:" + currentListTitle.textContent.trim() + " ";
+            userPrompt = "list-title:" + currentListTitle.textContent.trim() + " ";
+            submitType = 'title_change';
         }
 
         // add all items to userPrompt if any items have been added, removed, or edited
@@ -1006,7 +1017,8 @@ transition: height 0.2s;
             }
         });
         console.log("Prompt 5 FINAL: form data is:" + userPrompt);
-        chrome.runtime.sendMessage({ message: 'submit_form', formData: userPrompt });
+        
+        chrome.runtime.sendMessage({ message: submitType, formData: userPrompt });
     });
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
 
@@ -1066,11 +1078,16 @@ const processModalText = (text) => {
     if (!modal) {
         console.error("The modal element was not found.");
     }
+    
     modalBuffer += text;
     let lines = modalBuffer.split("\n");
     if (lines.length > 1) {
         modalBuffer = lines.pop();
         lines.forEach((line) => {
+            //list-titleISSUE oof ok just kinda making the first line start with list-title: but only once if it was already tehre
+            if (line.startsWith("list-title:list-title:")) {
+                line = "list-title:" + line.substring("list-title:".length).replace(/^list-title:/, "");
+            }
             if (line.startsWith("list-title:")) {
 
                 console.log("modalContent innerHTML at list-title is: " + modalContent.innerHTML);
