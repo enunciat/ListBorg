@@ -30,8 +30,9 @@ let currentListTitle;
 //let currentListTitleInput;
 let titleEdited = false;
 let itemEdited = false;
-let addItemButton; 
-
+let inputEdited = false;
+let addItemButton;
+let clearListButton;
 
 /////////////////////////////////////////// CREATE LIST ITEM /////////////////////////////////////////////
 
@@ -132,6 +133,23 @@ const createModal = (selectedText = '') => {
     // Get the parent modal div
     //modal = document.getElementById('lb-modal-id');
 
+    // add a clearList button
+    clearListButton = document.createElement("button");
+    clearListButton.innerText = "Clear List";
+    clearListButton.classList.add("lb-clear-list-button");
+    clearListButton.addEventListener("click", () => {
+        itemsUL = document.querySelector(".lb-itemsUL");
+        itemsUL.innerHTML = "";
+        // also clear the lb-current-list-title
+        currentListTitle = document.querySelector(".lb-current-list-title");
+        currentListTitle.innerText = "";
+        // i want to call clearing everything as titleEdited = false, itemEdited = false
+        titleEdited = false;
+        itemEdited = false;
+        selectedText = '';
+    });
+    // put the clear list before the submit button:
+    footerContainer.insertBefore(clearListButton, submitButton);
 
 
     // create add new item addListItem button:
@@ -329,6 +347,7 @@ const createModal = (selectedText = '') => {
             padding: 0px;
             background-color: #F4F0F0;
             height: auto !important;
+            max-height: none !important;
         }
 
         div#lb-modal-content-id.screenshot #lb-header-container-id {
@@ -390,14 +409,15 @@ const createModal = (selectedText = '') => {
         left: 100%;
         margin: 0;
         width: 300px;
-        overflow-x: hidden; 
+        overflow-x: hidden;
+        overflow-y: auto;
         background-color: #333;
         border: 1px solid;
         border-image: linear-gradient(to right, #3f87a6, #ebf8e1, #f69d3c);
         border-image-slice: 1;
         border-radius: 0;
         padding: 10px;
-        
+        max-height: 80vh;
         z-index: 2147483645;
         color: #fff;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
@@ -405,10 +425,9 @@ const createModal = (selectedText = '') => {
     }
     
     #lb-modal-id .lb-modal-content {
-        /* allows for scrolling if the list is long */
-        overflow: auto;
-        /* limits the height of the modal-content */
-        max-height: 80vh;
+
+
+        
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
     }
     
@@ -471,7 +490,8 @@ const createModal = (selectedText = '') => {
         margin: 0 8px;
         font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
         box-sizing: border-box;
-        border: 2px solid transparent; /* add a transparent border */
+        border: 2px solid #5B5B5B; /* add a transparent border */
+        border-radius: 20px;
         padding: 5px;
     }
 
@@ -637,7 +657,22 @@ const createModal = (selectedText = '') => {
         padding: 10px 10px;
         cursor: pointer;
         text-align: center;
-        
+    }
+
+    .lb-clear-list-button {
+        display: none;
+        color: lightgrey;
+        background-color: #333333;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif, Arial;
+        padding: 5px 5px;
+        cursor: pointer;
+        text-align: center;
+        margin-right: 25px;
+        border: none;
+    }
+    .lb-clear-list-button:hover {
+        display: none;
+        background-color: #605F5F;
     }
     
     #lb-modal-id #lb-submit-button-id.lb-submit-button:hover {
@@ -976,10 +1011,10 @@ transition: height 0.2s;
         let userPrompt = "";
         let submitType = 'default_list';
         // add selected item to userPrompt
-        userPrompt += selectedItem.value + " ";
 
-        // replace selected item with list-title in userPrompt if it has been edited
-        if (titleEdited) {
+
+        // if title was changed to something, replace selected item with list-title in userPrompt if it has been edited
+        if (titleEdited && currentListTitle.textContent.trim() !== "") {
             console.log("Prompt 2: if titleEdited ran!");
             userPrompt = "list-title:" + currentListTitle.textContent.trim() + " ";
             submitType = 'title_change';
@@ -997,9 +1032,16 @@ transition: height 0.2s;
                 }
             });
             userPrompt += allItems;
+            submitType = 'item_change';
         }
+
+        if (!titleEdited && !itemEdited) {
+            userPrompt = selectedItem.value + " ";
+        }
+
         // add inputs to userPrompt
         let inputs = metadataContainer.querySelectorAll("input, select");
+
         inputs.forEach(input => {
             if (input.id !== "selectedItem") {
                 let name = input.id.replace("lb-", "list-");
@@ -1010,14 +1052,26 @@ transition: height 0.2s;
                 } else {
                     value = input.value;
                 }
-                if (value !== defaultValue) {
+                if (input.tagName.toLowerCase() === "select") { // Check if input is a select element
+                    if (value !== defaultValue && input.id === "lb-type") { // Check if lb-type was changed
+                        userPrompt += `${name}:${value} `;
+                        inputEdited = true;
+                        console.log("Prompt 4a: the Type select input was edited!");
+                    }
+                } else if (value !== defaultValue) { // Check for changes to other input types
                     userPrompt += `${name}:${value} `;
-                    console.log("Prompt 4: inputs were edited ran!");
+                    inputEdited = true;
+                    console.log("Prompt 4b: other inputs were edited ran!");
                 }
             }
         });
-        console.log("Prompt 5 FINAL: form data is:" + userPrompt);
-        
+
+        if (!titleEdited && !itemEdited && !inputEdited && !selectedText) {
+            console.log("Prompt 5a: NO CHANGES MADE, NO PROMPT SUBMITTED");
+            return;
+        }
+        console.log("Prompt 5 userPrompt is:" + userPrompt + " and submitType is: " + submitType);
+
         chrome.runtime.sendMessage({ message: submitType, formData: userPrompt });
     });
     ////////////////////////////// END SUBMIT BUTTON /////////////////////////////////
@@ -1078,7 +1132,7 @@ const processModalText = (text) => {
     if (!modal) {
         console.error("The modal element was not found.");
     }
-    
+
     modalBuffer += text;
     let lines = modalBuffer.split("\n");
     if (lines.length > 1) {
@@ -1179,6 +1233,14 @@ const processModalText = (text) => {
                     case "type":
                         input = document.createElement("select");
                         let options = ["encyclopedic", "evaluative", "top-10", "artistic"];
+                        input.id = `lb-${metadataType}`;
+                        input.classList.add(`lb-${metadataType}`);
+                        label = document.createElement("label");
+                        label.innerHTML = metadataType;
+                        label.htmlFor = input.id;
+                        metadataContainer.appendChild(input);
+                        metadataContainer.appendChild(label);
+                        let defaultValue;
                         options.forEach((option) => {
                             let optionElement = document.createElement("option");
                             optionElement.value = option;
@@ -1186,16 +1248,10 @@ const processModalText = (text) => {
                             input.appendChild(optionElement);
                             if (option === metadataValue) {
                                 optionElement.selected = true;
-                                input.defaultValue = option;
+                                defaultValue = option;
                             }
-                            input.id = `lb-${metadataType}`;
-                            input.classList.add(`lb-${metadataType}`);
-                            label = document.createElement("label");
-                            label.innerHTML = metadataType;
-                            label.htmlFor = input.id;
-                            metadataContainer.appendChild(input);
-                            metadataContainer.appendChild(label);
                         });
+                        input.defaultValue = defaultValue;
                         break;
                     case "details":
                         detailsButton = metadataContainerToggle.querySelector('input.lb-details');
@@ -1277,6 +1333,7 @@ const updateDone = () => {
     console.log("//////// Update Text is //////" + updateTextBuffer);
     console.log(processorTextBuffer);
     submitButton.style.display = "block";
+    clearListButton.style.display = "block";
 
     // Append and show screenshot button
     headerContainer.appendChild(screenshotButton);
@@ -1292,7 +1349,7 @@ const updateDone = () => {
             });
         });
     }
-    setTimeout(storedPositionModal, 1000);
+    setTimeout(storedPositionModal, 2000);
 };
 
 function showCursor(element) {

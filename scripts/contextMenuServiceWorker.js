@@ -132,6 +132,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             // send the response back to the content script
             sendResponse({ success: true });
         });
+    } else if (request.message === 'item_change') {
+        // send the new prompt to the OpenAI API
+        sendMessage(null, 'initModal');
+        const formData = request.formData;
+        console.log("The formData:"+formData);
+        generateCompletionAction(formData, "item_change_prompt").then(response => {
+            // send the response back to the content script
+            sendResponse({ success: true });
+        });
         return true;
     }
 });
@@ -146,7 +155,6 @@ const generateCompletionAction = async (info, promptName = "defaultPrompt") => {
         let selectionText = info.selectionText 
         ? info.selectionText + "" 
         : info;
-        console.log("#2: my selectionText is: " + selectionText);
 
         let prompt;
         if (promptName === "defaultPrompt") {
@@ -204,9 +212,9 @@ Generate a list that would accurately contain this item: ${selectionText}
 `;
         } else if (promptName === "title_change_prompt") {
             prompt = 
-`Task name: Generate a list with a title similar to the following, and (if present) include the included items amongst other items. Task Instructions: For the list-title provided, generate a real, accurate, and complete list that would really have that title, and the items. Always begin your response with 'list-title:', as shown in the examples, regardless of the prompt.
+`Task name: Generate a list with a title similar to the following, and (if present) include the included items amongst other items. Task Instructions: For the list-title provided, generate a real, accurate, and complete list that would really have that title, and the items. Always begin your response with 'list-title:' like in the examples.
 
-Generate a list below with a title similar to the following, and (if present) include the included items amongst other items: list-title:AFI's 100 Years...100 Movies the godfather item-2:Casablanca item:Singin' in the Rain list-details:on
+Generate a list below with a title similar to the following, and (if present) include the included items amongst other items: list-title:best movies item-2:Casablanca item:Singin' in the Rain list-details:on
 list-title:AFI's 100 Years...100 Movies
 item-1:Citizen Kane
 item-2:Casablanca
@@ -234,7 +242,7 @@ list-type:evaluative
 list-notes:This is the first 10 of the AFI's 100 years...100 movies list.
 list-details:on
 
-Generate a list with a title similar to the following, and (if present) include the included items amongst other items: list-title:Wikipedia List of Landlocked Countries item:Austria list-details:off list-order:alphabetical list-quantity:7
+Generate a list with a title similar to the following, and (if present) include the included items amongst other items: list-title:landlocked item:Austria list-details:off list-order:alphabetical list-quantity:7
 list-title:Wikipedia List of Landlocked Countries
 item-1:Afghanistan
 item-2:Andorra
@@ -250,10 +258,59 @@ list-notes:This is a list of landlocked countries on Wikipedia
 list-details:off
 
 Generate a list with a title similar to the following, and (if present) include the included items: amongst other items: ${selectionText}
-<LIST_TITLE>`;       
-        } else if (promptName === "prompt3") {  
-            prompt = "Your third prompt text here";
-        }
+`;       
+        } else if (promptName === "item_change_prompt") {
+            prompt = 
+`Task name: Generate a list that would accurately contain the following item(s). 
+Task Instructions: For the item(s) provided, generate a real, accurate, and complete list that would really include those items. 
+The generated list should not just be on the general topic of the requested item; it should be a list that would accurately include them. 
+Check the list for accuracy. Always begin your response with 'list-title:' like in the provided examples below.
+
+Generate a list that would accurately contain the following item(s): item-5:Casablanca item-4:Singin' in the Rain 
+list-title:AFI's 100 Years...100 Movies
+item-1:Citizen Kane
+item-2:Casablanca
+item-3:The Godfather
+item-4:Gone with the Wind
+item-5:Lawrence of Arabia
+item-6:The Wizard of Oz
+item-7:The Graduate
+item-8:On the Waterfront
+item-9:Schindler's List
+item-10:Singin' in the Rain
+details-item-1:1941, directed by Orson Welles, produced by RKO Radio Pictures
+details-item-2:1942, directed by Michael Curtiz, produced by Warner Bros. Pictures
+details-item-3:1972, directed by Francis Ford Coppola, produced by Paramount Pictures, Alfran Productions
+details-item-4:1939, directed by Victor Fleming, produced by Selznick International Pictures
+details-item-5:1962, directed by David Lean, produced by Horizon Pictures
+details-item-6:1939, directed by Victor Fleming, produced by Metro-Goldwyn-Mayer
+details-item-7:1967, directed by Mike Nichols, produced by Lawrence Turman
+details-item-8:1954, directed by Elia Kazan, produced by Horizon-American Pictures
+details-item-9:1993, directed by Steven Spielberg, produced by Amblin Entertainment
+details-item-10:1952, directed by Gene Kelly and Stanley Donen, produced by Metro-Goldwyn-Mayer
+list-quantity:10
+list-order:quality
+list-type:evaluative
+list-notes:This is the first 10 of the AFI's 100 years...100 movies list.
+list-details:on
+
+Generate a list that would accurately contain the following item(s): item-1:Austria list-details:off list-order:alphabetical list-quantity:7
+list-title:Wikipedia List of Landlocked Countries
+item-1:Afghanistan
+item-2:Andorra
+item-3:Armenia
+item-4:Austria
+item-5:Azerbaijan
+item-6:Belarus
+item-7:Bhutan
+list-quantity:7
+list-order:alphabetical
+list-type:encyclopedic
+list-notes:This is a list of landlocked countries on Wikipedia
+list-details:off
+
+Generate a list that would accurately contain the following item(s):${selectionText}
+`;}
 
         console.log(`#3: My prompt's SelectionText which is being sent to my baseCompletion is: ${prompt}`);
 
